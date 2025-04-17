@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Creative-genius001/stacklo/utils/logger"
+	"github.com/Creative-genius001/Stacklo/utils/logger"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
