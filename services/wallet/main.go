@@ -1,4 +1,4 @@
-package wallet
+package main
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Creative-genius001/stacklo/utils/logger"
+	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )

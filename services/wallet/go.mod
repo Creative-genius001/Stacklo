@@ -3,7 +3,7 @@ module github.com/Creative-genius001/wallet
 go 1.24.2
 
 require (
-	github.com/Creative-genius001/stacklo v0.0.0-20250417173652-b947b9f2078b // indirect
+	github.com/Creative-genius001/Stacklo v0.0.0-20250417173652-b947b9f2078b // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
