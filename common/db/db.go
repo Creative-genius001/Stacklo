@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"stacklo/utils/logger"
+
+	"github.com/Creative-genius001/stacklo/utils/logger"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"

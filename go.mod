@@ -1,4 +1,4 @@
-module github.com/Creative-genius001/Stacklo
+module github.com/Creative-genius001/stacklo
 
 go 1.24.2
 
