@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,61 +24,67 @@ func SetLogLevel(level logrus.Level) {
 
 type Fields logrus.Fields
 
-// Debugf logs a message at level Debug on the standard logger.
-func Debugf(format string, args ...interface{}) {
+func Debug(args ...interface{}) {
 	if logger.Level >= logrus.DebugLevel {
-		entry := logger.WithFields(logrus.Fields{})
-		entry.Debugf(format, args...)
+		logger.Debug(fmt.Sprint(args...))
 	}
 }
 
-// Infof logs a message at level Info on the standard logger.
-func Infof(format string, args ...interface{}) {
+func Info(args ...interface{}) {
 	if logger.Level >= logrus.InfoLevel {
-		entry := logger.WithFields(logrus.Fields{})
-		entry.Infof(format, args...)
+		logger.Info(fmt.Sprint(args...))
 	}
 }
 
-// Warnf logs a message at level Warn on the standard logger.
-func Warnf(format string, args ...interface{}) {
+func Warn(args ...interface{}) {
 	if logger.Level >= logrus.WarnLevel {
-		entry := logger.WithFields(logrus.Fields{})
-		entry.Warnf(format, args...)
+		logger.Warn(fmt.Sprint(args...))
 	}
 }
 
-// Errorf logs a message at level Error on the standard logger.
-func Errorf(format string, args ...interface{}) {
+func Error(args ...interface{}) {
 	if logger.Level >= logrus.ErrorLevel {
-		entry := logger.WithFields(logrus.Fields{})
-		entry.Errorf(format, args...)
+		logger.Error(fmt.Sprint(args...))
 	}
 }
 
-// Fatalf logs a message at level Fatal on the standard logger.
-func Fatalf(format string, args ...interface{}) {
+func Fatal(args ...interface{}) {
 	if logger.Level >= logrus.FatalLevel {
-		entry := logger.WithFields(logrus.Fields{})
-		entry.Fatalf(format, args...)
+		logger.Fatal(fmt.Sprint(args...))
 	}
 }
+
+// ANSI color codes
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+)
 
 // Formatter implements logrus.Formatter interface.
-type formatter struct {
-	prefix string
-}
+type formatter struct{}
 
 // Format building log message.
 func (f *formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var sb bytes.Buffer
+	var color string
+	switch entry.Level {
+	case logrus.InfoLevel:
+		color = colorGreen
+	case logrus.WarnLevel:
+		color = colorYellow
+	case logrus.ErrorLevel, logrus.FatalLevel:
+		color = colorRed
+	default:
+		color = colorReset
+	}
 
-	sb.WriteString(strings.ToUpper(entry.Level.String()))
-	sb.WriteString(" ")
-	sb.WriteString(entry.Time.Format(time.RFC3339))
-	sb.WriteString(" ")
-	sb.WriteString(f.prefix)
-	sb.WriteString(entry.Message)
+	timestamp := entry.Time.Format(time.RFC3339)
+	level := strings.ToUpper(entry.Level.String())
+
+	logLine := fmt.Sprintf("%s[%s] %s %s%s\n", color, level, timestamp, entry.Message, colorReset)
+	sb.WriteString(logLine)
 
 	return sb.Bytes(), nil
 }
