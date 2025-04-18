@@ -9,6 +9,8 @@ import (
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -20,7 +22,17 @@ func main() {
 	router.Use(gin.Recovery())
 	// router.Use(limit.MaxAllowed(200))
 
-	//initialise DB
+	//connect to postgres DB
+	DB_URL := os.Getenv("DB_URL")
+	dsn := DB_URL
+	_, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		logger.Error("Failed to connect to database:", err)
+		os.Exit(1)
+	}
+
+	logger.Info("Connection to database url successful")
 
 	//init routes
 	//routes.InitializeRoutes(router)
