@@ -18,12 +18,14 @@ func main() {
 	if err != nil {
 		fmt.Println("Error loading .env file")
 	}
+	PORT := os.Getenv("PORT")
+	DB_URL := os.Getenv("DB_URL")
+
 	router := gin.New()
 	router.Use(gin.Recovery())
 	// router.Use(limit.MaxAllowed(200))
 
 	//connect to postgres DB
-	DB_URL := os.Getenv("DB_URL")
 	dsn := DB_URL
 	_, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
@@ -44,7 +46,6 @@ func main() {
 	//router.Use(cors.New(corsConfig))
 
 	//startup server
-	PORT := os.Getenv("PORT")
 	s := &http.Server{
 		Addr:           ":" + PORT,
 		Handler:        router,
