@@ -3,7 +3,7 @@ module github.com/Creative-genius001/wallet
 go 1.24.2
 
 require (
-	github.com/Creative-genius001/Stacklo v0.0.0-20250417173652-b947b9f2078b
+	github.com/Creative-genius001/Stacklo v0.0.0-20250419122310-6d44a9ef4ff4
 	github.com/gin-gonic/gin v1.10.0
 	github.com/joho/godotenv v1.5.1
 )

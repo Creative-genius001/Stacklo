@@ -1,5 +1,7 @@
 github.com/Creative-genius001/Stacklo v0.0.0-20250417173652-b947b9f2078b h1:BLylSl0baCljMn01sbO2T5MSHzXLDpEEZKRiQg3W5Ks=
 github.com/Creative-genius001/Stacklo v0.0.0-20250417173652-b947b9f2078b/go.mod h1:wokFNCWW4d6aPjL9sMGZTy7Sqi8WC0nlXmMy8GB2mTs=
+github.com/Creative-genius001/Stacklo v0.0.0-20250419122310-6d44a9ef4ff4 h1:n5NX/KDwNV/Qz01JpeUahVZb1Q2rFxXn7oOrZfAu1L0=
+github.com/Creative-genius001/Stacklo v0.0.0-20250419122310-6d44a9ef4ff4/go.mod h1:wokFNCWW4d6aPjL9sMGZTy7Sqi8WC0nlXmMy8GB2mTs=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=
 github.com/bytedance/sonic v1.11.6/go.mod h1:LysEHSvpvDySVdC2f87zGWf6CIKJcAvqab1ZaiQtds4=
 github.com/bytedance/sonic/loader v0.1.1 h1:c+e5Pt1k/cy5wMveRDyk2X4B9hF4g7an8N3zCYjJFNM=
