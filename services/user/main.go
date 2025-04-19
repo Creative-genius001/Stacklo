@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/api/routes"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -34,7 +35,7 @@ func main() {
 	logger.Info("Connection to database url successful")
 
 	//init routes
-	//routes.InitializeRoutes(router)
+	routes.InitializeRoutes(router)
 
 	// Configure CORS
 	//corsConfig := cors.DefaultConfig()
@@ -53,7 +54,7 @@ func main() {
 	}
 	logger.Info("Server is starting and running on port: ", PORT)
 	if s.ListenAndServe(); err != nil {
-		logger.Error("Failed to start server ", err, nil)
+		logger.Error("Failed to start server ", err)
 	}
 
 }
