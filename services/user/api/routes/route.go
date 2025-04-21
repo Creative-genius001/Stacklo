@@ -1,8 +1,7 @@
 package routes
 
 import (
-	"github.com/Creative-genius001/Stacklo/api/handlers"
-
+	"github.com/Creative-genius001/user/api/handlers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +14,7 @@ func InitializeRoutes(router *gin.Engine) {
 
 	authRouter := router.Group("/api/auth")
 	{
-		authRouter.GET("/:id", handlers.Login)
-		authRouter.GET("/:id", handlers.Register)
+		authRouter.POST("/login", handlers.Login)
+		authRouter.POST("/register", handlers.Register)
 	}
 }
