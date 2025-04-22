@@ -1,0 +1,68 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: CI
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "services/**"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "services/*"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      user_changed: ${{ steps.filter.outputs.user }}
+      wallet_changed: ${{ steps.filter.outputs.wallet }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            user:
+              - 'services/user/**'
+            wallet:
+              - 'services/wallet/**'
+
+  user-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run tests for user service
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: |
+          cd services/user
+          go test -v ./...
+  # wallet-service:
+  #   needs: detect-changes
+  #   if: needs.detect-changes.outputs.wallet_changed == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run tests for wallet service
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         go-version: "1.20"
+  #     - name: Build
+  #       run: go build -v ./...
+
+  #     - name: Test
+  #       run: |
+  #         cd services/wallet
+  #         go test -v ./...

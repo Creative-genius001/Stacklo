@@ -33,7 +33,7 @@ func IsValidPhoneNumber(numberToParse, countryCode string) (isValid bool, format
 	}
 
 	// Format the phone number using the national format and remove spaces
-	formattedNum = strings.ReplaceAll(phonenumbers.Format(metadata, phonenumbers.NATIONAL), " ", "")
+	formattedNum = strings.ReplaceAll(phonenumbers.Format(metadata, phonenumbers.E164), " ", "")
 
 	// Check if the phone number is valid
 	isValid = phonenumbers.IsValidNumber(metadata)

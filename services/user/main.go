@@ -51,7 +51,7 @@ func main() {
 	}
 	logger.Info("Server is starting and running on port: ", PORT)
 	if s.ListenAndServe(); err != nil {
-		logger.Error("Failed to start server ", err)
+		logger.Fatal("Failed to start server ", err)
 	}
 
 }
