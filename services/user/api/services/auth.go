@@ -6,6 +6,7 @@ import (
 	"github.com/Creative-genius001/user/db"
 	"github.com/Creative-genius001/user/models"
 	"github.com/Creative-genius001/user/types"
+	"github.com/Creative-genius001/user/utils"
 	"github.com/google/uuid"
 )
 
@@ -23,9 +24,26 @@ func RegisterService(RegForm types.RegisterType) error {
 		LastName:     RegForm.LastName,
 	}
 
-	res := db.DB.Create(&user)
-	if res.Error != nil {
-		return errors.New("signup failed! server error")
+	//check if user already exist in db
+	var count int64
+	db.DB.Model(&user).Where("email = ?", RegForm.Email).Count(&count)
+	if count > 0 {
+		return errors.New("email already exists")
+	} else {
+		//hash password
+		passwordHash, err := utils.HashPassword(RegForm.Password)
+		if err != nil {
+			return errors.New("hashing error")
+		}
+
+		user.PasswordHash = passwordHash
+
+		//add user to database
+		res := db.DB.Create(&user)
+		if res.Error != nil {
+			return errors.New("signup failed! server error")
+		}
+
 	}
 	return nil
 }

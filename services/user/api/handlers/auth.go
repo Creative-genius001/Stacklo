@@ -39,16 +39,6 @@ func Register(c *gin.Context) {
 
 	RegForm.Phone = formattedNum
 
-	//hash password
-	passwordHash, err := utils.HashPassword(RegForm.Password)
-	if err != nil {
-		res := utils.NewError(http.StatusInternalServerError, "sign up failed")
-		c.AbortWithStatusJSON(res.StatusCode, res)
-		return
-	}
-
-	RegForm.Password = passwordHash
-
 	err = services.RegisterService(RegForm)
 	if err != nil {
 		res := utils.NewError(http.StatusInternalServerError, err.Error())
