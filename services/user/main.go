@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/services/user/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/user/db"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
-	"github.com/Creative-genius001/user/api/routes"
-	"github.com/Creative-genius001/user/db"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

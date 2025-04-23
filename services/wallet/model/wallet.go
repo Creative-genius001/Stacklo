@@ -1,7 +1,4 @@
 package model
 
-type FiatCurrencyWallet struct {
-}
-
-type USDTWallet struct {
+type DVAWallet struct {
 }

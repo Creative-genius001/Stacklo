@@ -3,7 +3,7 @@ package db
 import (
 	"os"
 
-	"github.com/Creative-genius001/Stacklo/services/payment/utils/logger"
+	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

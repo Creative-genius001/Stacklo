@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Creative-genius001/user/api/services"
-	"github.com/Creative-genius001/user/types"
-	"github.com/Creative-genius001/user/utils"
+	"github.com/Creative-genius001/Stacklo/services/user/api/services"
+	"github.com/Creative-genius001/Stacklo/services/user/types"
+	"github.com/Creative-genius001/Stacklo/services/user/utils"
 	"github.com/gin-gonic/gin"
 )
 

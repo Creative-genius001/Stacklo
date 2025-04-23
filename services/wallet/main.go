@@ -6,11 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/wallet/db"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -19,31 +20,24 @@ func main() {
 		fmt.Println("Error loading .env file")
 	}
 	PORT := os.Getenv("PORT")
-	DB_URL := os.Getenv("DB_URL")
 
 	router := gin.New()
 	router.Use(gin.Recovery())
 	// router.Use(limit.MaxAllowed(200))
 
-	//connect to postgres DB
-	dsn := DB_URL
-	_, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
-	if err != nil {
-		logger.Error("Failed to connect to database:", err)
-		os.Exit(1)
-	}
+	//initiallize postgres DB
+	db.InitDB()
 
 	logger.Info("Connection to database url successful")
 
 	//init routes
-	//routes.InitializeRoutes(router)
+	routes.InitializeRoutes(router)
 
-	// Configure CORS
-	//corsConfig := cors.DefaultConfig()
-	//corsConfig.AddAllowHeaders("Authorization")
-	//corsConfig.AllowOrigins = []string{"*"}
-	//router.Use(cors.New(corsConfig))
+	//Configure CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AddAllowHeaders("Authorization")
+	corsConfig.AllowOrigins = []string{"*"}
+	router.Use(cors.New(corsConfig))
 
 	//startup server
 	s := &http.Server{

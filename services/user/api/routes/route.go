@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/Creative-genius001/user/api/handlers"
+	"github.com/Creative-genius001/Stacklo/services/user/api/handlers"
 	"github.com/gin-gonic/gin"
 )
 

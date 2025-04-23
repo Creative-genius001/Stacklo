@@ -3,10 +3,10 @@ package services
 import (
 	"errors"
 
-	"github.com/Creative-genius001/user/db"
-	"github.com/Creative-genius001/user/models"
-	"github.com/Creative-genius001/user/types"
-	"github.com/Creative-genius001/user/utils"
+	"github.com/Creative-genius001/Stacklo/services/user/db"
+	"github.com/Creative-genius001/Stacklo/services/user/models"
+	"github.com/Creative-genius001/Stacklo/services/user/types"
+	"github.com/Creative-genius001/Stacklo/services/user/utils"
 	"github.com/google/uuid"
 )
 
