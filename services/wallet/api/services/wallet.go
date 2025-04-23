@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 )
 
 func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCustomerResponse, error) {
-	PAYSTACK_BASE_URL := os.Getenv("PAYSTACK_BASE_URL")
-	PAYSTACK_API_KEY := os.Getenv("PAYSTACK_TEST_KEY")
+	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
+	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
 
 	customerReqJSON, err := json.Marshal(customerReq)
 	if err != nil {
@@ -67,8 +67,8 @@ func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCusto
 func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.CreateDVAWalletResponse, error) {
 	var wallet types.CreateDVAWalletResponse
 
-	PAYSTACK_BASE_URL := os.Getenv("PAYSTACK_BASE_URL")
-	PAYSTACK_API_KEY := os.Getenv("PAYSTACK_TEST_KEY")
+	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
+	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
 
 	createWalletReqJSON, err := json.Marshal(createWalletReq)
 	if err != nil {
@@ -112,6 +112,8 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 		logger.Error("failed to decode response: ", err)
 		return nil, fmt.Errorf("failed to decode API response")
 	}
+
+	//save to wallet db
 
 	return &wallet, nil
 }

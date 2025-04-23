@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/db"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-contrib/cors"
@@ -27,6 +28,9 @@ func main() {
 
 	//initiallize postgres DB
 	db.InitDB()
+
+	//initiallize config
+	config.Init()
 
 	logger.Info("Connection to database url successful")
 
