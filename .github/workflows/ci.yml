@@ -16,6 +16,7 @@ jobs:
     outputs:
       user_changed: ${{ steps.filter.outputs.user }}
       wallet_changed: ${{ steps.filter.outputs.wallet }}
+      payment_changed: ${{ steps.filter.outputs.wallet }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -29,6 +30,8 @@ jobs:
               - 'services/user/**'
             wallet:
               - 'services/wallet/**'
+            payment:
+              - 'services/payment/**'
 
   user-service:
     needs: detect-changes
@@ -66,4 +69,20 @@ jobs:
       - name: Test
         run: |
           cd services/wallet
+          go test -v ./...
+  payment-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.wallet_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run tests for payment service
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.2"
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: |
+          cd services/payment
           go test -v ./...
