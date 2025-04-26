@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// func LoginService() {
+func LoginService() {
 
-// }
+}
 
 func RegisterService(RegForm types.RegisterType) error {
 	user := models.User{
