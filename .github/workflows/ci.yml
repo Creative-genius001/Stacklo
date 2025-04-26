@@ -43,24 +43,34 @@ jobs:
         with:
           go-version: "1.24.2"
           submodules: recursive
-      - name: Debug repository structure
+      - name: Fix workspace path
         run: |
-          echo "=== Current directory ==="
-          pwd
-          echo "=== Repository contents ==="
-          ls -R
-          echo "=== services/ contents ==="
-          ls -la services/
-          echo "=== services/user contents ==="
-          ls -la services/user/ || echo "services/user not found"
-      - name: Debug directory structure
-        run: |
-          echo "Workspace: /services/user"
-          ls -R services/user
-          ls -R services/user
+          echo "Original workspace: $GITHUB_WORKSPACE"
+          cd ${{ github.workspace }}/..
+          mv Stacklo Stacklo-temp
+          mv Stacklo-temp/Stacklo/* Stacklo-temp/
+          mv Stacklo-temp Stacklo
+          ls -la  # Verify services/user exists
+
+      # - name: Debug repository structure
+      #   run: |
+      #     echo "=== Current directory ==="
+      #     pwd
+      #     echo "=== Repository contents ==="
+      #     ls -R
+      #     echo "=== services/ contents ==="
+      #     ls -la services/
+      #     echo "=== services/user contents ==="
+      #     ls -la services/user/ || echo "services/user not found"
+      # - name: Debug directory structure
+      #   run: |
+      #     echo "Workspace: /services/user"
+      #     ls -R services/user
+      #     ls -R services/user
       - name: Build
+        working-directory: ${{ github.workspace }}/..
         run: |
-          cd services/user &&
+          cd Stacklo/services/user
           go build -v ./...
 
       - name: Test
