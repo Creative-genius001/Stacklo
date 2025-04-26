@@ -1,38 +1,34 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"os"
+
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/user/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/user/config"
 	"github.com/Creative-genius001/Stacklo/services/user/db"
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file")
-	}
+
 	router := gin.Default()
 	router.Use(gin.Recovery())
 	// router.Use(limit.MaxAllowed(200))
 
 	//connect to postgres DB
 	db.InitDB()
-	if err != nil {
-		logger.Fatal("Failed to connect to database:", err)
-	}
 
 	logger.Info("Connection to database url successful")
 
 	//init routes
 	routes.InitializeRoutes(router)
+
+	//init config
+	config.Init()
 
 	//Configure CORS
 	corsConfig := cors.DefaultConfig()
@@ -41,7 +37,7 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	//startup server
-	PORT := os.Getenv("PORT")
+	PORT := config.Cfg.Port
 	s := &http.Server{
 		Addr:           ":" + PORT,
 		Handler:        router,
@@ -50,7 +46,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 	logger.Info("Server is starting and running on port: ", PORT)
-	if s.ListenAndServe(); err != nil {
+	if err := s.ListenAndServe(); err != nil {
 		logger.Fatal("Failed to start server ", err)
 	}
 
