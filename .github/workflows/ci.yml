@@ -50,20 +50,6 @@ jobs:
         with:
           go-version: "1.24.2"
 
-      - name: Full tree view
-        run: tree -a
-
-      - name: Debug repository structure
-        run: |
-          echo "=== Current directory ==="
-          pwd
-          echo "=== Repository contents ==="
-          ls -R
-          echo "=== services/ contents ==="
-          ls -la services/
-          echo "=== services/user contents ==="
-          ls -la services/user/ || echo "services/user not found"
-
       - name: Build
         working-directory: services/user
         run: go build -v ./...
