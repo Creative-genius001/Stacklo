@@ -45,8 +45,8 @@ jobs:
       - name: Debug directory structure
         run: |
           echo "Workspace: /services/user"
-          ls -R /services/user
-          ls -R /services/user
+          ls -R services/user
+          ls -R services/user
       - name: Build
         run: |
           cd services/user &&
