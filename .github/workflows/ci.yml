@@ -16,10 +16,12 @@ jobs:
     outputs:
       user_changed: ${{ steps.filter.outputs.user }}
       wallet_changed: ${{ steps.filter.outputs.wallet }}
-      payment_changed: ${{ steps.filter.outputs.wallet }}
+      payment_changed: ${{ steps.filter.outputs.payment }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Detect changes
         id: filter
@@ -38,13 +40,19 @@ jobs:
     if: needs.detect-changes.outputs.user_changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Run tests for user service
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.24.2"
-          submodules: recursive
+
       - name: Full tree view
         run: tree -a
+
       - name: Debug repository structure
         run: |
           echo "=== Current directory ==="
@@ -55,48 +63,57 @@ jobs:
           ls -la services/
           echo "=== services/user contents ==="
           ls -la services/user/ || echo "services/user not found"
-      # - name: Debug directory structure
-      #   run: |
-      #     echo "Workspace: /services/user"
-      #     ls -R services/user
-      #     ls -R services/user
+
       - name: Build
-        working-directory: ${{ github.workspace }}/..
-        run: |
-          cd Stacklo/services/user
-          go build -v ./...
+        working-directory: services/user
+        run: go build -v ./...
 
       - name: Test
+        working-directory: services/user
         run: go test -v ./...
+
   wallet-service:
     needs: detect-changes
     if: needs.detect-changes.outputs.wallet_changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Run tests for wallet service
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.24.2"
+
       - name: Build
+        working-directory: services/wallet
         run: go build -v ./...
 
       - name: Test
-        run: |
-          cd services/wallet
-          go test -v ./...
+        working-directory: services/wallet
+        run: go test -v ./...
+
   payment-service:
     needs: detect-changes
-    if: needs.detect-changes.outputs.wallet_changed == 'true'
+    if: needs.detect-changes.outputs.payment_changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Run tests for payment service
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.24.2"
+
       - name: Build
+        working-directory: services/payment
         run: go build -v ./...
 
       - name: Test
-        run: |
-          cd services/payment
-          go test -v ./...
+        working-directory: services/payment
+        run: go test -v ./...
