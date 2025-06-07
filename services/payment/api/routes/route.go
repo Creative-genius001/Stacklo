@@ -1,19 +1,15 @@
 package routes
 
 import (
+	"github.com/Creative-genius001/Stacklo/services/payment/api/handlers"
 	"github.com/gin-gonic/gin"
 )
 
 func InitializeRoutes(router *gin.Engine) {
 
-	// userRouter := router.Group("/api/user")
-	// {
-	// 	userRouter.GET("/:id", handlers.GetUserData)
-	// }
+	paymentRouter := router.Group("/api/payment")
+	{
+		paymentRouter.GET("/bank-list", handlers.GetBankList)
+	}
 
-	// authRouter := router.Group("/api/auth")
-	// {
-	// 	authRouter.POST("/login", handlers.Login)
-	// 	authRouter.POST("/register", handlers.Register)
-	// }
 }

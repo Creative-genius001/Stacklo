@@ -1,9 +1,8 @@
 package db
 
 import (
-	"os"
-
-	"github.com/Creative-genius001/Stacklo/services/payment/utils/logger"
+	"github.com/Creative-genius001/Stacklo/services/payment/config"
+	"github.com/Creative-genius001/go-logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -11,10 +10,7 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := os.Getenv("DB_URL")
-	if dsn == "" {
-		logger.Fatal("DB_URL is not set in environment variables")
-	}
+	dsn := config.Cfg.DBUrl
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
