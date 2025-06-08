@@ -10,6 +10,7 @@ func InitializeRoutes(router *gin.Engine) {
 	paymentRouter := router.Group("/api/payment")
 	{
 		paymentRouter.GET("/bank-list", handlers.GetBankList)
+		paymentRouter.GET("/account-details", handlers.ResolveAccountNumber)
 	}
 
 }

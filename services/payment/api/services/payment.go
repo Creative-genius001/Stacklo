@@ -56,3 +56,48 @@ func GetBankList() (*types.Banks, error) {
 
 	return &banks, nil
 }
+
+func ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error) {
+	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
+	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
+
+	// Create client with timeout and retry
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+	}
+
+	//create request
+	req, err := http.NewRequest("GET", PAYSTACK_BASE_URL+"/bank/resolve?account_number="+accountNumber+"&bank_code="+bankCode, nil)
+	if err != nil {
+		logger.Error("Request creation failed: ", err)
+		return nil, fmt.Errorf("failed to create request")
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+PAYSTACK_API_KEY)
+
+	var resp *http.Response
+	resp, err = client.Do(req)
+	if err != nil {
+		logger.Error("Failed to make request: ", err)
+		return nil, fmt.Errorf("failed to send request")
+	}
+
+	defer resp.Body.Close()
+
+	// Handle response
+	if resp.StatusCode >= 400 {
+		errorBody, _ := io.ReadAll(resp.Body)
+		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
+		return nil, fmt.Errorf("API error: %s", string(errorBody))
+	}
+
+	var acctDetails types.AccountResolutionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&acctDetails); err != nil {
+		logger.Error("failed to decode response: ", err)
+		return nil, fmt.Errorf("failed to decode API response")
+	}
+
+	return &acctDetails, nil
+}

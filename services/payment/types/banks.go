@@ -19,3 +19,13 @@ type Banks struct {
 		UpdatedAt   string      `json:"updatedAt,omitempty"`
 	} `json:"data"`
 }
+
+type AccountResolutionResponse struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+	Data    struct {
+		AccountNumber string `json:"account_number"`
+		AccountName   string `json:"account_name"`
+		BankID        int    `json:"bank_id"`
+	} `json:"data"`
+}

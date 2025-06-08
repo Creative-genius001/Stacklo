@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
@@ -12,25 +10,35 @@ import (
 	"github.com/Creative-genius001/Stacklo/utils/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file")
-	}
-	PORT := os.Getenv("PORT")
+	//initiallize config
+	config.Init()
+	PORT := config.Cfg.Port
+
+	expectedHost := "localhost:" + config.Cfg.Port
 
 	router := gin.New()
 	router.Use(gin.Recovery())
+	router.Use(func(c *gin.Context) {
+		if c.Request.Host != expectedHost {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid host header"})
+			return
+		}
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Content-Security-Policy", "default-src 'self'; connect-src *; font-src *; script-src-elem * 'unsafe-inline'; img-src * data:; style-src * 'unsafe-inline';")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		c.Header("Referrer-Policy", "strict-origin")
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("Permissions-Policy", "geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()")
+		c.Next()
+	})
 	// router.Use(limit.MaxAllowed(200))
 
 	//initiallize postgres DB
 	db.InitDB()
-
-	//initiallize config
-	config.Init()
 
 	logger.Info("Connection to database url successful")
 
@@ -52,7 +60,7 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 	logger.Info("Server is starting and running on port: ", PORT)
-	if s.ListenAndServe(); err != nil {
+	if err := s.ListenAndServe(); err != nil {
 		logger.Error("Failed to start server ", err, nil)
 	}
 

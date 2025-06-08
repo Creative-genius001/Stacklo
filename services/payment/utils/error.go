@@ -6,7 +6,7 @@ import (
 )
 
 type ErrorJSON struct {
-	Message    string                 `json:"message"`
+	Error      string                 `json:"message"`
 	StatusCode int                    `json:"status_code"`
 	Meta       map[string]interface{} `json:"meta,omitempty"`
 	StackTrace string                 `json:"stack_trace,omitempty"`
@@ -14,7 +14,7 @@ type ErrorJSON struct {
 
 func NewError(status int, message string) *ErrorJSON {
 	return &ErrorJSON{
-		Message:    message,
+		Error:      message,
 		StatusCode: status,
 		// StackTrace: captureStackTrace(3),
 	}

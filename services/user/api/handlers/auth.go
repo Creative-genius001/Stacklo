@@ -25,7 +25,7 @@ func Register(c *gin.Context) {
 	isValid := utils.IsValidEmail(RegForm.Email)
 	if !isValid {
 		res := utils.NewError(http.StatusBadRequest, "invalid email address")
-		c.AbortWithStatusJSON(res.StatusCode, res)
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 
@@ -33,7 +33,7 @@ func Register(c *gin.Context) {
 	isValid, formattedNum, err := utils.IsValidPhoneNumber(RegForm.Phone, "NG")
 	if !isValid || err != nil {
 		res := utils.NewError(http.StatusBadRequest, "invalid phone number")
-		c.AbortWithStatusJSON(res.StatusCode, res)
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 
@@ -42,7 +42,7 @@ func Register(c *gin.Context) {
 	err = services.RegisterService(RegForm)
 	if err != nil {
 		res := utils.NewError(http.StatusInternalServerError, err.Error())
-		c.AbortWithStatusJSON(res.StatusCode, res)
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 

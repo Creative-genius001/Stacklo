@@ -6,7 +6,8 @@ import (
 
 	"github.com/Creative-genius001/Stacklo/services/payment/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
-	"github.com/Creative-genius001/Stacklo/services/payment/db"
+
+	//"github.com/Creative-genius001/Stacklo/services/payment/db"
 	"github.com/Creative-genius001/go-logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,10 @@ import (
 
 func main() {
 
-	expectedHost := "localhost:5004"
+	//init config
+	config.Init()
+
+	expectedHost := "localhost:" + config.Cfg.Port
 
 	router := gin.Default()
 	router.Use(gin.Recovery())
@@ -35,7 +39,7 @@ func main() {
 	// router.Use(limit.MaxAllowed(200))
 
 	//connect to postgres DB
-	db.InitDB()
+	//db.InitDB()
 
 	logger.Info("Connection to database url successful")
 

@@ -17,14 +17,15 @@ func CreateWallet(c *gin.Context) {
 	var customerReq types.CreateCustomerRequest
 
 	if err := c.ShouldBindJSON(&customerReq); err != nil {
-		err := utils.NewError(http.StatusBadRequest, "Invalid input data")
-		c.AbortWithStatusJSON(err.StatusCode, err)
+		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 
 	customer, err := services.CreateCustomer(customerReq)
 	if err != nil {
-		utils.JSONErrorResp(c, http.StatusInternalServerError, "Error creating wallet")
+		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 
@@ -40,7 +41,8 @@ func CreateWallet(c *gin.Context) {
 
 	wallet, err := services.CreateDVAWallet(&createWalletReq)
 	if err != nil {
-		utils.JSONErrorResp(c, http.StatusInternalServerError, "Error creating wallet")
+		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
 		return
 	}
 
