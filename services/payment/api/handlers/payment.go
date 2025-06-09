@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
+	"github.com/Creative-genius001/Stacklo/services/payment/types"
 	"github.com/Creative-genius001/Stacklo/services/payment/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetBankList(c *gin.Context) {
@@ -33,6 +35,128 @@ func ResolveAccountNumber(c *gin.Context) {
 	if err != nil {
 		res := utils.NewError(http.StatusInternalServerError, err.Error())
 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func RequestOTP(c *gin.Context) {
+	var inputData types.StartTransferData
+	if err := c.ShouldBindJSON(&inputData); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
+		return
+	}
+
+	tranferRecipientInputData := types.CreateTransferRecipientRequest{
+		Type:          "nuban",
+		Name:          inputData.Name,
+		AccountNumber: inputData.AccountNumber,
+		BankCode:      inputData.BankCode,
+		Currency:      "NGN",
+	}
+
+	recipient, err := services.CreateTransferRecipient(&tranferRecipientInputData)
+	if err != nil {
+		res := utils.NewError(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		return
+	}
+
+	referenceNumber := uuid.New().String()
+
+	otpRequestData := types.TransferOtpRequest{
+		Source:    "balance",
+		Reason:    inputData.Reason,
+		Amount:    inputData.Amount,
+		Recipeint: recipient.Data.RecipientCode,
+		Reference: referenceNumber,
+	}
+
+	otp, err := services.RequestOTP(&otpRequestData)
+	if err != nil {
+		signedStr, tokenErr := utils.CreateRetryTokenOtpRequest(referenceNumber, recipient.Data.RecipientCode)
+		if tokenErr != nil {
+			res := utils.NewError(http.StatusInternalServerError, tokenErr.Error())
+			c.AbortWithStatusJSON(res.StatusCode, gin.H{
+				"error": "Generate Otp failed and retry token creation failed",
+			})
+			return
+		}
+
+		//hmacSignature := utils.GenerateHMAC(signedStr)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":       err.Error(),
+			"retry_token": signedStr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"transfer_code": otp.Data.TransferCode})
+}
+
+func RetryOtp(c *gin.Context) {
+
+	type RetryOtp struct {
+		Recipient string `json:"recipient"`
+		Reference string `json:"reference"`
+		Reason    string `json:"reason"`
+		Amount    string `json:"amount"`
+	}
+
+	type RetryToken struct {
+		RetryToken string `json:"retry_token"`
+		Reason     string `json:"reason"`
+		Amount     string `json:"amount"`
+	}
+
+	var inputData RetryToken
+	if err := c.ShouldBindJSON(&inputData); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid retry payload"})
+		return
+	}
+
+	parsed, err := utils.VerifyRetryToken(inputData.RetryToken)
+	if err != nil {
+		res := utils.NewError(http.StatusBadRequest, err.Error())
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{
+			"error": res.Error,
+		})
+		return
+	}
+
+	otpRequestData := types.TransferOtpRequest{
+		Source:    "balance",
+		Reason:    inputData.Reason,
+		Amount:    inputData.Amount,
+		Recipeint: parsed.Recipient,
+		Reference: parsed.Reference,
+	}
+
+	otp, err := services.RequestOTP(&otpRequestData)
+	if err != nil {
+		res := utils.NewError(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{
+			"error": "Generate Otp failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"transfer_code": otp.Data.TransferCode})
+}
+
+func Transfer(c *gin.Context) {
+	var tranferData types.QueuedTransferRequest
+
+	if err := c.BindJSON(&tranferData); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid data payload"})
+		return
+	}
+
+	resp, err := services.FinalTransfer(&tranferData)
+	if err != nil {
+		res := utils.NewError(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{
+			"error": "Transfer failed"})
 		return
 	}
 

@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"runtime"
+
+	"github.com/Creative-genius001/go-logger"
 )
 
 type ErrorJSON struct {
@@ -13,6 +15,7 @@ type ErrorJSON struct {
 }
 
 func NewError(status int, message string) *ErrorJSON {
+	logger.Error(status, message)
 	return &ErrorJSON{
 		Error:      message,
 		StatusCode: status,

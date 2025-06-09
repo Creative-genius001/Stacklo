@@ -15,6 +15,7 @@ type Config struct {
 	PaystackBaseUrl string `envconfig:"PAYSTACK_BASE_URL" required:"true"`
 	JwtKey          string `envconfig:"JWT_KEY" required:"true"`
 	PaystackTestKey string `envconfig:"PAYSTACK_TEST_KEY" required:"true"`
+	HMACKey         string `envconfig:"HMAC_KEY" required:"true"`
 }
 
 var (
