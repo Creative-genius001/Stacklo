@@ -4,10 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	natsclient "github.com/Creative-genius001/Stacklo/pkg/natsClient"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
+	"github.com/joho/godotenv"
 
 	//"github.com/Creative-genius001/Stacklo/services/payment/db"
+
 	"github.com/Creative-genius001/go-logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,6 +20,10 @@ func main() {
 
 	//init config
 	config.Init()
+
+	if err := godotenv.Load("../../.env"); err != nil {
+		logger.Fatal("No .env file found or failed to load")
+	}
 
 	expectedHost := "localhost:" + config.Cfg.Port
 
@@ -40,8 +47,7 @@ func main() {
 
 	//connect to postgres DB
 	//db.InitDB()
-
-	logger.Info("Connection to database url successful")
+	//logger.Info("Connection to database url successful")
 
 	//init routes
 	routes.InitializeRoutes(router)
@@ -51,6 +57,10 @@ func main() {
 	corsConfig.AddAllowHeaders("Authorization")
 	corsConfig.AllowOrigins = []string{"*"}
 	router.Use(cors.New(corsConfig))
+
+	//initialize NATS
+	natsclient.InitNATS()
+	defer natsclient.Close()
 
 	//startup server
 	PORT := config.Cfg.Port

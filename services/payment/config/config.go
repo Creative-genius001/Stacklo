@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Env             string `envconfig:"ENV" default:"development"`
-	Port            string `envconfig:"PORT" default:"8080"`
+	Port            string `envconfig:"PAYMENT_SERVICE_PORT" default:"8080"`
 	DBUrl           string `envconfig:"DB_URL" required:"true"`
 	PaystackBaseUrl string `envconfig:"PAYSTACK_BASE_URL" required:"true"`
 	JwtKey          string `envconfig:"JWT_KEY" required:"true"`

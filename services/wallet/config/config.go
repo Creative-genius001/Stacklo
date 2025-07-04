@@ -3,14 +3,14 @@ package config
 import (
 	"sync"
 
-	"github.com/Creative-genius001/Stacklo/utils/logger"
+	"github.com/Creative-genius001/go-logger"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
 	Env             string `envconfig:"ENV" default:"development"`
-	Port            string `envconfig:"PORT" default:"8080"`
+	Port            string `envconfig:"WALLET_SERVICE_PORT" default:"8080"`
 	DBUrl           string `envconfig:"DB_URL" required:"true"`
 	PaystackBaseUrl string `envconfig:"PAYSTACK_BASE_URL"`
 	PaystackTestKey string `envconfig:"PAYSTACK_TEST_KEY"`

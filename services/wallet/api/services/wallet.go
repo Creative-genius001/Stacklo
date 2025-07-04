@@ -10,7 +10,7 @@ import (
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
-	"github.com/Creative-genius001/Stacklo/utils/logger"
+	"github.com/Creative-genius001/go-logger"
 )
 
 func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCustomerResponse, error) {

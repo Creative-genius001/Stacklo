@@ -7,14 +7,20 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/db"
-	"github.com/Creative-genius001/Stacklo/utils/logger"
+	"github.com/Creative-genius001/go-logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	//initiallize config
 	config.Init()
+
+	if err := godotenv.Load("../../.env"); err != nil {
+		logger.Fatal("No .env file found or failed to load")
+	}
+
 	PORT := config.Cfg.Port
 
 	expectedHost := "localhost:" + config.Cfg.Port

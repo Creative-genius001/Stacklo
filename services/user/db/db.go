@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/Creative-genius001/Stacklo/services/user/config"
-	"github.com/Creative-genius001/Stacklo/utils/logger"
+	"github.com/Creative-genius001/go-logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
