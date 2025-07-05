@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"bytes"
@@ -134,6 +134,7 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 func (w *walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
 	wallet, err := w.GetWallet(ctx, id)
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 

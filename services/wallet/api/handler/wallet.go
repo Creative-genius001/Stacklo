@@ -1,16 +1,41 @@
-package handlers
+package handler
 
 import (
 	"net/http"
 
-	"github.com/Creative-genius001/Stacklo/services/wallet/api/services"
+	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	"github.com/gin-gonic/gin"
 )
 
-func GetWalletDetails(c *gin.Context) {
+type Handler struct {
+	service services.Service
+}
 
+func NewHandler(s services.Service) *Handler {
+	return &Handler{service: s}
+}
+
+func (h *Handler) GetWallet(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		res := utils.NewError(http.StatusBadRequest, "Invalid request data")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		return
+	}
+
+	// wallet, err := h.service.GetWallet(c.Request.Context(), id)
+	// if err != nil {
+	// 	res := utils.NewError(http.StatusInternalServerError, "Error retrieving wallet")
+	// 	c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+	// 	return
+	// }
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    "wallet",
+	})
 }
 
 func CreateWallet(c *gin.Context) {
