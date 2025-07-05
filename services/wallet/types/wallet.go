@@ -79,3 +79,51 @@ type CreateDVAWalletResponse struct {
 func (c CreateCustomerResponse) Error() string {
 	panic("unimplemented")
 }
+
+type GetWalletResponse struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+	Data    struct {
+		Customer struct {
+			ID           int64  `json:"id"`
+			FirstName    string `json:"first_name"`
+			LastName     string `json:"last_name"`
+			Email        string `json:"email"`
+			CustomerCode string `json:"customer_code"`
+			Phone        string `json:"phone"`
+			Metadata     struct {
+				CallingCode string `json:"calling_code"`
+			} `json:"metadata"`
+			RiskAction               string      `json:"risk_action"`
+			InternationalFormatPhone interface{} `json:"international_format_phone"`
+		} `json:"customer"`
+		Bank struct {
+			Name string `json:"name"`
+			ID   int    `json:"id"`
+			Slug string `json:"slug"`
+		} `json:"bank"`
+		ID            int    `json:"id"`
+		AccountName   string `json:"account_name"`
+		AccountNumber string `json:"account_number"`
+		CreatedAt     string `json:"created_at"`
+		UpdatedAt     string `json:"updated_at"`
+		Currency      string `json:"currency"`
+		SplitConfig   string `json:"split_config"`
+		Active        bool   `json:"active"`
+		Assigned      bool   `json:"assigned"`
+	} `json:"data"`
+}
+
+type Wallet struct {
+	ID                   string `json:"id"`
+	Active               bool   `json:"active"`
+	UserId               string `json:"user_id"`
+	Currency             string `json:"currency"`
+	Balance              int64  `json:"balance"`
+	VirtualAccountName   string `json:"virtual_account_name"`
+	VirtualAccountNumber string `json:"virtual_account_number"`
+	VirtualBankName      string `json:"virtual_bank_name"`
+	VirtualBankCode      string `json:"virtual_bank_code"`
+	CreatedAt            string `json:"created_at"`
+	UpdatedAt            string `json:"updated_at"`
+}

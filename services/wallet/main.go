@@ -44,9 +44,7 @@ func main() {
 	// router.Use(limit.MaxAllowed(200))
 
 	//initiallize postgres DB
-	db.InitDB()
-
-	logger.Info("Connection to database url successful")
+	db.TestDBConn(config.Cfg.DBUrl)
 
 	//init routes
 	routes.InitializeRoutes(router)

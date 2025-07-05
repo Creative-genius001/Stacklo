@@ -1,21 +1,23 @@
+version: "3.8"
 services:
-  postgres:
-    image: postgres:latest
-    container_name: stacklo
-    restart: always
-    env_file:
-      - .env
+  wallet-db:
+    container_name: wallet_db
+    build:
+      context: ./services/wallet
+      dockerfile: db.Dockerfile
+    restart: on-failure
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${POSTGRES_PORT}:5432"
-    networks:
-      - mynetwork
+      - "4200:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 networks:
   mynetwork:
+    driver: bridge
 
 volumes:
   postgres_data:

@@ -1,25 +1,36 @@
 package db
 
 import (
+	"context"
+	"fmt"
 	"os"
 
 	"github.com/Creative-genius001/go-logger"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5"
 )
 
-var DB *gorm.DB
-
-func InitDB() {
-	dsn := os.Getenv("DB_URL")
-	if dsn == "" {
-		logger.Fatal("DB_URL is not set in environment variables")
-	}
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+func TestDBConn(url string) {
+	conn, err := pgx.Connect(context.Background(), url)
 	if err != nil {
-		logger.Fatal("Failed to connect to the database:", err)
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
 	}
+	defer conn.Close(context.Background())
 
-	DB = db
+	logger.Info("Connection to database url successful")
+
+	// sqlScript, err := os.ReadFile("create_wallets_table.sql")
+	// if err != nil {
+	// 	logger.Fatal("Unable to read SQL script file: ", err)
+	// 	os.Exit(1)
+	// }
+
+	// _, err = conn.Exec(context.Background(), string(sqlScript))
+	// if err != nil {
+	// 	logger.Fatal("Failed to execute SQL script: ", err)
+	// 	os.Exit(1)
+	// }
+
+	// logger.Info("Wallets table created or already exists successfully!")
+
 }

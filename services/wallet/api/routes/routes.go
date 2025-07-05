@@ -11,6 +11,9 @@ func InitializeRoutes(router *gin.Engine) {
 	{
 		walletRouter.GET("/:id", handlers.GetWalletDetails)
 		walletRouter.POST("/create", handlers.CreateWallet)
+		walletRouter.POST("/deposit", handlers.CreateWallet)
+		walletRouter.GET("/balance", handlers.CreateWallet)
+		walletRouter.POST("/withdraw", handlers.CreateWallet)
 	}
 
 }

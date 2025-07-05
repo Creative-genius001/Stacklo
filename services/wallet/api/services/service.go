@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,18 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/go-logger"
 )
+
+type Service interface {
+	GetWallet(ctx context.Context, id string) (*types.Wallet, error)
+}
+
+type walletService struct {
+	repository Repository
+}
+
+func NewService(r Repository) Service {
+	return &walletService{r}
+}
 
 func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCustomerResponse, error) {
 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
@@ -116,4 +129,13 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	//save to wallet db
 
 	return &wallet, nil
+}
+
+func (w *walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
+	wallet, err := w.GetWallet(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return wallet, nil
 }
