@@ -16,6 +16,7 @@ import (
 
 type Service interface {
 	GetWallet(ctx context.Context, id string) (*types.Wallet, error)
+	CreateWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error)
 }
 
 type walletService struct {
@@ -131,10 +132,18 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	return &wallet, nil
 }
 
-func (w *walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
-	wallet, err := w.GetWallet(ctx, id)
+func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
+	wallet, err := w.repository.GetWallet(ctx, id)
 	if err != nil {
-		logger.Error(err)
+		return nil, err
+	}
+
+	return wallet, nil
+}
+
+func (w walletService) CreateWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error) {
+	wallet, err := w.repository.CreateWallet(ctx, wt)
+	if err != nil {
 		return nil, err
 	}
 

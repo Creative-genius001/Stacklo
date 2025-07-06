@@ -5,6 +5,7 @@ import (
 
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -21,59 +22,95 @@ func (h *Handler) GetWallet(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
 		res := utils.NewError(http.StatusBadRequest, "Invalid request data")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
 		return
 	}
 
-	// wallet, err := h.service.GetWallet(c.Request.Context(), id)
-	// if err != nil {
-	// 	res := utils.NewError(http.StatusInternalServerError, "Error retrieving wallet")
-	// 	c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
-	// 	return
-	// }
+	wallet, err := h.service.GetWallet(c.Request.Context(), id)
+	if err != nil {
+		if err.Error() == "wallet not found" {
+			res := utils.NewError(http.StatusInternalServerError, "Wallet not found")
+			c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+			return
+		}
+		res := utils.NewError(http.StatusInternalServerError, "Error retrieving wallet")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    "wallet",
+		"data":    wallet,
 	})
 }
 
-func CreateWallet(c *gin.Context) {
-	var customerReq types.CreateCustomerRequest
+func (h *Handler) CreateWallet(c *gin.Context) {
 
-	if err := c.ShouldBindJSON(&customerReq); err != nil {
+	var wallet types.Wallet
+	if err := c.ShouldBindJSON(&wallet); err != nil {
 		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
 		return
 	}
 
-	customer, err := services.CreateCustomer(customerReq)
+	w, err := h.service.CreateWallet(c.Request.Context(), wallet)
 	if err != nil {
-		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+		res := utils.NewError(http.StatusInternalServerError, "Error crreating wallet")
+		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
 		return
 	}
 
-	createWalletReq := types.CreateDVAWalletRequest{
-		FirstName:     customerReq.FirstName,
-		LastName:      customerReq.LastName,
-		Email:         customerReq.Email,
-		Phone:         customerReq.Phone,
-		Customer:      customer.Data.ID,
-		Country:       "NG",
-		PreferredBank: "wema-bank",
-	}
-
-	wallet, err := services.CreateDVAWallet(&createWalletReq)
-	if err != nil {
-		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"status_code": http.StatusCreated,
-		"message":     "wallet created successfully",
-		"wallet":      wallet,
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"wallet": gin.H{
+			"id":                     w.ID,
+			"active":                 w.Active,
+			"balance":                w.Balance,
+			"currency":               w.Currency,
+			"virtual_account_name":   w.VirtualAccountName,
+			"virtual_account_number": w.VirtualAccountNumber,
+			"virtual_bank_name":      w.VirtualBankName,
+			"virtual_bank_code":      w.VirtualBankCode,
+		},
 	})
 }
+
+// func CreateWallet(c *gin.Context) {
+// 	var customerReq types.CreateCustomerRequest
+
+// 	if err := c.ShouldBindJSON(&customerReq); err != nil {
+// 		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
+// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+// 		return
+// 	}
+
+// 	customer, err := services.CreateCustomer(customerReq)
+// 	if err != nil {
+// 		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
+// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+// 		return
+// 	}
+
+// 	createWalletReq := types.CreateDVAWalletRequest{
+// 		FirstName:     customerReq.FirstName,
+// 		LastName:      customerReq.LastName,
+// 		Email:         customerReq.Email,
+// 		Phone:         customerReq.Phone,
+// 		Customer:      customer.Data.ID,
+// 		Country:       "NG",
+// 		PreferredBank: "wema-bank",
+// 	}
+
+// 	wallet, err := services.CreateDVAWallet(&createWalletReq)
+// 	if err != nil {
+// 		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
+// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, gin.H{
+// 		"status_code": http.StatusCreated,
+// 		"message":     "wallet created successfully",
+// 		"wallet":      wallet,
+// 	})
+// }

@@ -115,15 +115,15 @@ type GetWalletResponse struct {
 }
 
 type Wallet struct {
-	ID                   string  `json:"id"`
-	Active               bool    `json:"active"`
-	UserId               string  `json:"user_id"`
-	Currency             string  `json:"currency"`
-	Balance              float64 `json:"balance"`
-	VirtualAccountName   string  `json:"virtual_account_name"`
-	VirtualAccountNumber string  `json:"virtual_account_number"`
-	VirtualBankName      string  `json:"virtual_bank_name"`
-	VirtualBankCode      string  `json:"virtual_bank_code"`
-	CreatedAt            string  `json:"created_at"`
-	UpdatedAt            string  `json:"updated_at"`
+	ID                   string    `json:"id,omitempty"`
+	Active               bool      `json:"active"`
+	UserId               string    `json:"user_id"`
+	Currency             string    `json:"currency"`
+	Balance              float64   `json:"balance,omitempty"`
+	VirtualAccountName   string    `json:"virtual_account_name"`
+	VirtualAccountNumber string    `json:"virtual_account_number"`
+	VirtualBankName      string    `json:"virtual_bank_name"`
+	VirtualBankCode      string    `json:"virtual_bank_code"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
 }
