@@ -132,6 +132,52 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	return &wallet, nil
 }
 
+func CreateWalletPaystack(c types.CreateCustomerRequest) (*types.Wallet, error) {
+
+	// customer, err := services.CreateCustomer(c)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// createWalletReq := types.CreateDVAWalletRequest{
+	// 	FirstName:     c.FirstName,
+	// 	LastName:      c.LastName,
+	// 	Phone:         c.Phone,
+	// 	CustomerCode:      3356, //customer.Data.Code
+	// 	PreferredBank: "wema-bank",
+	// }
+
+	// wallet, err := services.CreateDVAWallet(&createWalletReq)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	currentTime := time.Now()
+	accountName := c.FirstName + c.LastName + "/ PAYSTACK"
+
+	wPayStack := types.Wallet{
+		Currency:             "NGN",
+		Active:               true,
+		VirtualAccountName:   accountName,
+		VirtualAccountNumber: "0091728654",
+		VirtualBankName:      "Providus Bank",
+		CreatedAt:            currentTime,
+		UpdatedAt:            currentTime,
+	}
+
+	// wPayStack := types.Wallet{
+	// 	Currency:             wallet.Data.Currency,
+	// 	Active:               wallet.Data.Active,
+	// 	VirtualAccountName:   wallet.Data.AccountName,
+	// 	VirtualAccountNumber: wallet.Data.AccountNumber,
+	// 	VirtualBankName:      wallet.Data.Bank.Name,
+	// 	CreatedAt:            wallet.Data.CreatedAt,
+	// 	UpdatedAt:            wallet.Data.UpdatedAt,
+	// }
+
+	return &wPayStack, nil
+}
+
 func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
 	wallet, err := w.repository.GetWallet(ctx, id)
 	if err != nil {

@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS wallets (
     virtual_account_name VARCHAR(255),
     virtual_account_number VARCHAR(50),
     virtual_bank_name VARCHAR(255),
-    virtual_bank_code VARCHAR(20),
     active BOOLEAN NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

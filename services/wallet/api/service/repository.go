@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/go-logger"
@@ -44,7 +43,7 @@ func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.W
 	var w types.Wallet
 	query := `SELECT * FROM wallets WHERE id = $1 LIMIT 1`
 	row := r.db.QueryRow(ctx, query, id)
-	err := row.Scan(&w.ID, &w.UserId, &w.Active, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankCode, &w.VirtualBankName, &w.Currency, &w.Balance, &w.CreatedAt, &w.UpdatedAt)
+	err := row.Scan(&w.ID, &w.UserId, &w.Active, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankName, &w.Currency, &w.Balance, &w.CreatedAt, &w.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			logger.Error("Wallet not found due to error: ", err)
@@ -59,17 +58,15 @@ func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.W
 func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error) {
 
 	w.ID = uuid.New().String()
-	w.CreatedAt = time.Now()
-	w.UpdatedAt = time.Now()
 	query := `
 		INSERT INTO wallets (
 			id, user_id, currency, balance,
-			virtual_account_name, virtual_account_number, virtual_bank_name, virtual_bank_code, active,
+			virtual_account_name, virtual_account_number, virtual_bank_name, active,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		) RETURNING id, user_id, currency, balance,
-					virtual_account_name, virtual_account_number, virtual_bank_name, virtual_bank_code, active,
+					virtual_account_name, virtual_account_number, virtual_bank_name, active,
 					created_at, updated_at
 	`
 	err := r.db.QueryRow(
@@ -82,7 +79,6 @@ func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (
 		w.VirtualAccountName,
 		w.VirtualAccountNumber,
 		w.VirtualBankName,
-		w.VirtualBankCode,
 		w.Active,
 		w.CreatedAt,
 		w.UpdatedAt,
@@ -94,7 +90,6 @@ func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (
 		&w.VirtualAccountName,
 		&w.VirtualAccountNumber,
 		&w.VirtualBankName,
-		&w.VirtualBankCode,
 		&w.Active,
 		&w.CreatedAt,
 		&w.UpdatedAt,

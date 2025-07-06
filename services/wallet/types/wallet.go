@@ -3,12 +3,10 @@ package types
 import "time"
 
 type CreateCustomerRequest struct {
-	Email         string `json:"email"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	Phone         string `json:"phone"`
-	PreferredBank string `json:"preferred_bank"`
-	Country       string `json:"country"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Phone     string `json:"phone"`
 }
 
 type CreateCustomerResponse struct {
@@ -28,13 +26,11 @@ type CreateCustomerResponse struct {
 }
 
 type CreateDVAWalletRequest struct {
-	Email         string `json:"email"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
 	Phone         string `json:"phone"`
 	PreferredBank string `json:"preferred_bank"`
-	Country       string `json:"country"`
-	Customer      int64  `json:"customer"`
+	CustomerCode  int64  `json:"customer"`
 }
 
 type CreateDVAWalletResponse struct {
@@ -123,7 +119,6 @@ type Wallet struct {
 	VirtualAccountName   string    `json:"virtual_account_name"`
 	VirtualAccountNumber string    `json:"virtual_account_number"`
 	VirtualBankName      string    `json:"virtual_bank_name"`
-	VirtualBankCode      string    `json:"virtual_bank_code"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
 }

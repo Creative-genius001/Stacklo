@@ -5,6 +5,7 @@ import (
 
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+	"github.com/google/uuid"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	"github.com/gin-gonic/gin"
@@ -46,14 +47,19 @@ func (h *Handler) GetWallet(c *gin.Context) {
 
 func (h *Handler) CreateWallet(c *gin.Context) {
 
-	var wallet types.Wallet
-	if err := c.ShouldBindJSON(&wallet); err != nil {
+	var customerReq types.CreateCustomerRequest
+	if err := c.ShouldBindJSON(&customerReq); err != nil {
 		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
 		return
 	}
 
-	w, err := h.service.CreateWallet(c.Request.Context(), wallet)
+	wallet, err := services.CreateWalletPaystack(customerReq)
+
+	wallet.ID = uuid.New().String()
+	wallet.UserId = "a1b2c3d4-e5f6-4789-90ab-cdef01234567"
+
+	w, err := h.service.CreateWallet(c.Request.Context(), *wallet)
 	if err != nil {
 		res := utils.NewError(http.StatusInternalServerError, "Error crreating wallet")
 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
@@ -70,47 +76,6 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 			"virtual_account_name":   w.VirtualAccountName,
 			"virtual_account_number": w.VirtualAccountNumber,
 			"virtual_bank_name":      w.VirtualBankName,
-			"virtual_bank_code":      w.VirtualBankCode,
 		},
 	})
 }
-
-// func CreateWallet(c *gin.Context) {
-// 	var customerReq types.CreateCustomerRequest
-
-// 	if err := c.ShouldBindJSON(&customerReq); err != nil {
-// 		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
-// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
-// 		return
-// 	}
-
-// 	customer, err := services.CreateCustomer(customerReq)
-// 	if err != nil {
-// 		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
-// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
-// 		return
-// 	}
-
-// 	createWalletReq := types.CreateDVAWalletRequest{
-// 		FirstName:     customerReq.FirstName,
-// 		LastName:      customerReq.LastName,
-// 		Email:         customerReq.Email,
-// 		Phone:         customerReq.Phone,
-// 		Customer:      customer.Data.ID,
-// 		Country:       "NG",
-// 		PreferredBank: "wema-bank",
-// 	}
-
-// 	wallet, err := services.CreateDVAWallet(&createWalletReq)
-// 	if err != nil {
-// 		res := utils.NewError(http.StatusInternalServerError, "Error creating wallet")
-// 		c.AbortWithStatusJSON(res.StatusCode, gin.H{"error": res.Error})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{
-// 		"status_code": http.StatusCreated,
-// 		"message":     "wallet created successfully",
-// 		"wallet":      wallet,
-// 	})
-// }
