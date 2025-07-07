@@ -12,6 +12,7 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/go-logger"
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -188,6 +189,10 @@ func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet,
 }
 
 func (w walletService) CreateWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error) {
+
+	wt.ID = uuid.New().String()
+	wt.UserId = "a1b2c3d4-e5f6-4789-90ab-cdef01234567"
+
 	wallet, err := w.repository.CreateWallet(ctx, wt)
 	if err != nil {
 		return nil, err

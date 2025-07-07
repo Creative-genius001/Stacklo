@@ -8,7 +8,6 @@ import (
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
 	"github.com/Creative-genius001/go-logger"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -57,7 +56,6 @@ func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.W
 
 func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error) {
 
-	w.ID = uuid.New().String()
 	query := `
 		INSERT INTO wallets (
 			id, user_id, currency, balance,

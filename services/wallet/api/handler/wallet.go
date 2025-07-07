@@ -5,7 +5,6 @@ import (
 
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
-	"github.com/google/uuid"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	"github.com/gin-gonic/gin"
@@ -55,9 +54,6 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 	}
 
 	wallet, err := services.CreateWalletPaystack(customerReq)
-
-	wallet.ID = uuid.New().String()
-	wallet.UserId = "a1b2c3d4-e5f6-4789-90ab-cdef01234567"
 
 	w, err := h.service.CreateWallet(c.Request.Context(), *wallet)
 	if err != nil {
