@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
-	"github.com/Creative-genius001/go-logger"
+	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -34,8 +36,8 @@ func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCusto
 
 	customerReqJSON, err := json.Marshal(customerReq)
 	if err != nil {
-		logger.Error("Failed to marshal customer request: ", err)
-		return nil, fmt.Errorf("failed to prepare customer data")
+		logger.Logger.Warn("Failed to marshal customer request")
+		return nil, errors.New(errors.TypeInternal, "Failed to marshal customer request")
 	}
 
 	// Create client with timeout and retry
@@ -44,11 +46,7 @@ func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCusto
 	}
 
 	//create request
-	req, err := http.NewRequest("POST", PAYSTACK_BASE_URL+"/customer", bytes.NewBuffer(customerReqJSON))
-	if err != nil {
-		logger.Error("Request creation failed: ", err)
-		return nil, fmt.Errorf("failed to create request")
-	}
+	req, _ := http.NewRequest("POST", PAYSTACK_BASE_URL+"/customer", bytes.NewBuffer(customerReqJSON))
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
@@ -57,8 +55,8 @@ func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCusto
 	var resp *http.Response
 	resp, err = client.Do(req)
 	if err != nil {
-		logger.Error("Failed to make request: ", err)
-		return nil, fmt.Errorf("failed to send request")
+		logger.Logger.Error("Paystack API error: Failed to establish a connection", zap.String("API URL", PAYSTACK_BASE_URL+"/dedicated_account"))
+		return nil, errors.Wrap(errors.TypeExternal, "Paystack API error: Failed to establish a connection", err)
 	}
 
 	defer resp.Body.Close()
@@ -66,14 +64,14 @@ func CreateCustomer(customerReq types.CreateCustomerRequest) (*types.CreateCusto
 	// Handle response
 	if resp.StatusCode >= 400 {
 		errorBody, _ := io.ReadAll(resp.Body)
-		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-		return nil, fmt.Errorf("API error: %s", string(errorBody))
+		logger.Logger.Warn("Failed to read response data", zap.String("errorMsg", string(errorBody)))
+		return nil, errors.New(errors.TypeInternal, "Failed to read response data")
 	}
 
 	var customer types.CreateCustomerResponse
 	if err := json.NewDecoder(resp.Body).Decode(&customer); err != nil {
-		logger.Error("failed to decode response: ", err)
-		return nil, fmt.Errorf("failed to decode API response")
+		logger.Logger.Warn("failed to decode response")
+		return nil, errors.New(errors.TypeInternal, "Failed to decode response")
 	}
 
 	return &customer, nil
@@ -87,8 +85,8 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 
 	createWalletReqJSON, err := json.Marshal(createWalletReq)
 	if err != nil {
-		logger.Error("Failed to marshal customer request: ", err)
-		return nil, fmt.Errorf("failed to prepare customer data")
+		logger.Logger.Warn("Failed to marshal customer request")
+		return nil, errors.New(errors.TypeInternal, "Failed to marshal customer request")
 	}
 
 	// Create client with timeout and retry
@@ -97,11 +95,7 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	}
 
 	//create request
-	req, err := http.NewRequest("POST", PAYSTACK_BASE_URL+"/dedicated_account", bytes.NewBuffer(createWalletReqJSON))
-	if err != nil {
-		logger.Error("Request creation failed: ", err)
-		return nil, fmt.Errorf("failed to create request")
-	}
+	req, _ := http.NewRequest("POST", PAYSTACK_BASE_URL+"/dedicated_account", bytes.NewBuffer(createWalletReqJSON))
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
@@ -110,8 +104,8 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	var resp *http.Response
 	resp, err = client.Do(req)
 	if err != nil {
-		logger.Error("Failed to make request: ", err)
-		return nil, fmt.Errorf("failed to send request")
+		logger.Logger.Error("Paystack API error: Failed to establish a connection", zap.String("API URL", PAYSTACK_BASE_URL+"/dedicated_account"))
+		return nil, errors.Wrap(errors.TypeExternal, "Paystack API error: Failed to establish a connection", err)
 	}
 
 	defer resp.Body.Close()
@@ -119,16 +113,14 @@ func CreateDVAWallet(createWalletReq *types.CreateDVAWalletRequest) (*types.Crea
 	// Handle response
 	if resp.StatusCode >= 400 {
 		errorBody, _ := io.ReadAll(resp.Body)
-		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-		return nil, fmt.Errorf("API error: %s", string(errorBody))
+		logger.Logger.Warn("Failed to read response data", zap.String("errorMsg", string(errorBody)))
+		return nil, errors.New(errors.TypeInternal, "Failed to read response data")
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&wallet); err != nil {
-		logger.Error("failed to decode response: ", err)
-		return nil, fmt.Errorf("failed to decode API response")
+		logger.Logger.Warn("failed to decode response")
+		return nil, errors.New(errors.TypeInternal, "Failed to decode response")
 	}
-
-	//save to wallet db
 
 	return &wallet, nil
 }
@@ -182,7 +174,11 @@ func CreateWalletPaystack(c types.CreateCustomerRequest) (*types.Wallet, error) 
 func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
 	wallet, err := w.repository.GetWallet(ctx, id)
 	if err != nil {
-		return nil, err
+		if err == pgx.ErrNoRows {
+			return nil, errors.New(errors.TypeNotFound, "wallet not found")
+		}
+		logger.Logger.Error("Failed to retrieve wallet from repository", zap.Error(err), zap.String("wallet_id", id))
+		return nil, errors.Wrap(errors.TypeInternal, "failed to retrieve wallet", err)
 	}
 
 	return wallet, nil

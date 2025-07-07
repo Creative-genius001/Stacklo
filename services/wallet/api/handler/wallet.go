@@ -2,12 +2,14 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
-
-	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
+	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
@@ -19,22 +21,24 @@ func NewHandler(s services.Service) *Handler {
 }
 
 func (h *Handler) GetWallet(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
-		res := utils.NewError(http.StatusBadRequest, "Invalid request data")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+
+	walletIDStr := strings.TrimSpace(c.Param("id"))
+	if walletIDStr == "" {
+		logger.Logger.Warn("Invalid request data")
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
-	wallet, err := h.service.GetWallet(c.Request.Context(), id)
+	wallet, err := h.service.GetWallet(c.Request.Context(), walletIDStr)
 	if err != nil {
-		if err.Error() == "wallet not found" {
-			res := utils.NewError(http.StatusInternalServerError, "Wallet not found")
-			c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+		appErr, _ := err.(*errors.CustomError)
+		if appErr.Type == errors.TypeNotFound {
+			logger.Logger.Info("Wallet not found")
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "error": appErr.Message})
 			return
 		}
-		res := utils.NewError(http.StatusInternalServerError, "Error retrieving wallet")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+		logger.Logger.Error("Error retrieving wallet", zap.Error(err))
+		c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "error": errors.TypeInternal})
 		return
 	}
 
@@ -47,18 +51,38 @@ func (h *Handler) GetWallet(c *gin.Context) {
 func (h *Handler) CreateWallet(c *gin.Context) {
 
 	var customerReq types.CreateCustomerRequest
+
 	if err := c.ShouldBindJSON(&customerReq); err != nil {
-		res := utils.NewError(http.StatusBadRequest, "Invalid input data")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+		logger.Logger.Warn("Invalid input data")
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
 	wallet, err := services.CreateWalletPaystack(customerReq)
+	if err != nil {
+		appErr, ok := err.(*errors.CustomError)
+		if !ok {
+			errors.Wrap(errors.TypeInternal, "unexpected error", err)
+		}
+
+		if appErr.Type == errors.TypeInternal || appErr.Type == errors.TypeExternal {
+			logger.Logger.Error("Service error during wallet fetch", zap.Error(appErr))
+		} else {
+			logger.Logger.Info("Client-facing error during wallet fetch", zap.Error(appErr))
+		}
+		c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
+		return
+	}
 
 	w, err := h.service.CreateWallet(c.Request.Context(), *wallet)
 	if err != nil {
-		res := utils.NewError(http.StatusInternalServerError, "Error crreating wallet")
-		c.AbortWithStatusJSON(res.StatusCode, gin.H{"success": false, "error": res.Error})
+		appErr, _ := err.(*errors.CustomError)
+		if appErr.Type == errors.TypeInternal {
+			logger.Logger.Error("Service error during wallet fetch", zap.Error(appErr))
+		} else {
+			logger.Logger.Info("Client-facing error during wallet fetch", zap.Error(appErr))
+		}
+		c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 		return
 	}
 

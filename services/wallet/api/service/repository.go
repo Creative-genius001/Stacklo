@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
-	"github.com/Creative-genius001/go-logger"
+	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 type Repository interface {
@@ -30,7 +31,7 @@ func NewPostgresRepository(url string) (Repository, error) {
 		os.Exit(1)
 	}
 
-	logger.Info("db connection successful")
+	logger.Logger.Info("DB connection successful")
 	return &postgresRepository{db}, nil
 }
 
@@ -40,16 +41,16 @@ func (r *postgresRepository) Close() {
 
 func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
 	var w types.Wallet
-	query := `SELECT * FROM wallets WHERE id = $1 LIMIT 1`
+	query := `SELECT id, user_id, currency, balance,virtual_account_name, virtual_account_number,  virtual_bank_name,active,  created_at, updated_at
+          FROM wallets WHERE id = $1`
 	row := r.db.QueryRow(ctx, query, id)
-	err := row.Scan(&w.ID, &w.UserId, &w.Active, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankName, &w.Currency, &w.Balance, &w.CreatedAt, &w.UpdatedAt)
+	err := row.Scan(&w.ID, &w.UserId, &w.Currency, &w.Balance, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankName, &w.Active, &w.CreatedAt, &w.UpdatedAt)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			logger.Error("Wallet not found due to error: ", err)
-			return nil, errors.New("wallet not found")
+		if err == pgx.ErrNoRows {
+			return nil, err
 		}
-		logger.Error("Error retrieving wallet due to error: ", err)
-		return nil, err
+		logger.Logger.Error("Database query failed", zap.Error(err), zap.String("wallet-id", id))
+		return nil, errors.Wrap(errors.TypeInternal, "database query error", err)
 	}
 	return &w, nil
 }
@@ -94,11 +95,8 @@ func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (
 	)
 
 	if err != nil {
-		logger.Error("Failed to create wallet: ", err)
-		return nil, errors.New("Failed to create wallet")
+		return nil, err
 	}
-
-	logger.Info("Successfully created wallet with ID: " + w.ID)
 	return &w, nil
 }
 

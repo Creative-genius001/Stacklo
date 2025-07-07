@@ -2,13 +2,18 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/handler"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
-	"github.com/Creative-genius001/go-logger"
+	"github.com/Creative-genius001/Stacklo/services/wallet/middlewares"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
+	"go.uber.org/zap"
+
+	//"github.com/Creative-genius001/go-logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -19,15 +24,29 @@ func main() {
 	config.Init()
 
 	if err := godotenv.Load("../../.env"); err != nil {
-		logger.Fatal("No .env file found or failed to load")
+		logger.Logger.Fatal(".env file not found", zap.Error(err))
+	}
+
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "" {
+		appEnv = "development"
+	}
+
+	logger.InitLogger(appEnv)
+	defer logger.Logger.Sync()
+
+	if appEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	PORT := config.Cfg.Port
 
 	expectedHost := "localhost:" + config.Cfg.Port
 
-	r := gin.Default()
+	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(middlewares.RequestLoggerMiddleware())
+	r.Use(middlewares.ErrorRecoveryMiddleware())
 	r.Use(func(c *gin.Context) {
 		if c.Request.Host != expectedHost {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid host header"})
@@ -52,7 +71,7 @@ func main() {
 	retry.ForeverSleep(2*time.Second, func(_ int) (err error) {
 		re, err = service.NewPostgresRepository(config.Cfg.DBUrl)
 		if err != nil {
-			logger.Error(err)
+			logger.Logger.Fatal("Failed to connect to database", zap.Error(err))
 		}
 		return
 	})
@@ -73,9 +92,9 @@ func main() {
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	logger.Info("Server is starting and running on port: ", PORT)
+	logger.Logger.Info("Starting server", zap.String("port", PORT))
 	if err := s.ListenAndServe(); err != nil {
-		logger.Error("Failed to start server ", err, nil)
+		logger.Logger.Fatal("Server failed to start", zap.Error(err))
 	}
 
 }
