@@ -62,7 +62,9 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {
-			errors.Wrap(errors.TypeInternal, "unexpected error", err)
+			logger.Logger.Error("Fuck it didnt assert")
+			c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+			return
 		}
 
 		if appErr.Type == errors.TypeInternal || appErr.Type == errors.TypeExternal {
@@ -76,9 +78,14 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 
 	w, err := h.service.CreateWallet(c.Request.Context(), *wallet)
 	if err != nil {
-		appErr, _ := err.(*errors.CustomError)
+		appErr, ok := err.(*errors.CustomError)
+		if !ok {
+			logger.Logger.Error("Fuck it didnt assert")
+			c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+			return
+		}
 		if appErr.Type == errors.TypeInternal {
-			logger.Logger.Error("Service error during wallet fetch", zap.Error(appErr))
+			logger.Logger.Error("Service error: Could not create wallet", zap.Error(appErr))
 		} else {
 			logger.Logger.Info("Client-facing error during wallet fetch", zap.Error(appErr))
 		}

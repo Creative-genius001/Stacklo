@@ -1,5 +1,23 @@
 package types
 
+import "context"
+
+type Services interface {
+	GetBankList() (*Banks, error)
+	PaystackAPIWrapper(ctx context.Context, url string, headers map[string]interface{}, data map[string]interface{}) (map[string]interface{}, error)
+	GetOTP(ctx context.Context, trf TransferOtpRequest) (*TransferOtpResponse, error)
+}
+
+type URL string
+
+const (
+	UBankList URL = "/bank/comitisoidm"
+	// UBankList       URL = "/bank?currency=NGN"
+	UResolveAccNum  URL = "/bank/resolve?account_number="
+	UCreateTrfRecpt URL = "/transferrecipient"
+	UTransfer       URL = "/transfer"
+)
+
 type StartTransferData struct {
 	Name          string `json:"name"`
 	AccountNumber string `json:"account_number"`

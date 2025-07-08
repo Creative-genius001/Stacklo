@@ -191,7 +191,7 @@ func (w walletService) CreateWallet(ctx context.Context, wt types.Wallet) (*type
 
 	wallet, err := w.repository.CreateWallet(ctx, wt)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(errors.TypeInternal, "Unable to create wallet", err)
 	}
 
 	return wallet, nil

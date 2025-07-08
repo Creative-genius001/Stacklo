@@ -10,10 +10,10 @@ func InitializeRoutes(router *gin.Engine) {
 	paymentRouter := router.Group("/api/payment")
 	{
 		paymentRouter.GET("/bank-list", handlers.GetBankList)
-		paymentRouter.GET("/account-details", handlers.ResolveAccountNumber)
-		paymentRouter.POST("/otp/get", handlers.RequestOTP)
-		paymentRouter.POST("/otp/retry", handlers.RetryOtp)
-		paymentRouter.POST("/transfer", handlers.Transfer)
+		// paymentRouter.GET("/account-details", handlers.ResolveAccountNumber)
+		// paymentRouter.POST("/otp/get", handlers.RequestOTP)
+		// paymentRouter.POST("/otp/retry", handlers.RetryOtp)
+		// paymentRouter.POST("/transfer", handlers.Transfer)
 	}
 
 }

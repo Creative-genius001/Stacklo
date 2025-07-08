@@ -60,7 +60,7 @@ func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (
 	query := `
 		INSERT INTO wallets (
 			id, user_id, currency, balance,
-			virtual_account_name, virtual_account_number, virtual_bank_name, active,
+			virtual_account_name, virtual_account_number, virtual_bank_name, 
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
