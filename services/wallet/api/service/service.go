@@ -175,9 +175,8 @@ func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet,
 	wallet, err := w.repository.GetWallet(ctx, id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, errors.New(errors.TypeNotFound, "wallet not found")
+			return nil, errors.Wrap(errors.TypeNotFound, "wallet not found", err)
 		}
-		logger.Logger.Error("Failed to retrieve wallet from repository", zap.Error(err), zap.String("wallet_id", id))
 		return nil, errors.Wrap(errors.TypeInternal, "failed to retrieve wallet", err)
 	}
 

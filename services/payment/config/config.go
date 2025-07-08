@@ -3,9 +3,10 @@ package config
 import (
 	"sync"
 
-	"github.com/Creative-genius001/go-logger"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -29,7 +30,7 @@ func Init() {
 
 		Cfg = &Config{}
 		if err := envconfig.Process("", Cfg); err != nil {
-			logger.Fatal("failed to load environment variables: ", err)
+			logger.Logger.Fatal("failed to load environment variables: ", zap.Error(err))
 		}
 	})
 }

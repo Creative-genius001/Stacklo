@@ -24,20 +24,24 @@ func (h *Handler) GetWallet(c *gin.Context) {
 
 	walletIDStr := strings.TrimSpace(c.Param("id"))
 	if walletIDStr == "" {
-		logger.Logger.Warn("Invalid request data")
+		logger.Logger.Warn("Wallet ID is an empty string")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
 	wallet, err := h.service.GetWallet(c.Request.Context(), walletIDStr)
 	if err != nil {
-		appErr, _ := err.(*errors.CustomError)
+		appErr, ok := err.(*errors.CustomError)
+		if !ok {
+			logger.Logger.Error("Fuck it didnt assert")
+			c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+			return
+		}
 		if appErr.Type == errors.TypeNotFound {
-			logger.Logger.Info("Wallet not found")
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "error": appErr.Message})
 			return
 		}
-		logger.Logger.Error("Error retrieving wallet", zap.Error(err))
+		logger.Logger.Error("Error retrieving wallet", zap.Error(appErr))
 		c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "error": errors.TypeInternal})
 		return
 	}
@@ -62,11 +66,9 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {
-			logger.Logger.Error("Fuck it didnt assert")
-			c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
 		}
-
 		if appErr.Type == errors.TypeInternal || appErr.Type == errors.TypeExternal {
 			logger.Logger.Error("Service error during wallet fetch", zap.Error(appErr))
 		} else {
@@ -95,7 +97,7 @@ func (h *Handler) CreateWallet(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"wallet": gin.H{
+		"data": gin.H{
 			"id":                     w.ID,
 			"active":                 w.Active,
 			"balance":                w.Balance,

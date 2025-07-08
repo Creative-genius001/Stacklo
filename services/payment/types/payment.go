@@ -11,8 +11,7 @@ type Services interface {
 type URL string
 
 const (
-	UBankList URL = "/bank/comitisoidm"
-	// UBankList       URL = "/bank?currency=NGN"
+	UBankList       URL = "/bank?currency=NGN"
 	UResolveAccNum  URL = "/bank/resolve?account_number="
 	UCreateTrfRecpt URL = "/transferrecipient"
 	UTransfer       URL = "/transfer"

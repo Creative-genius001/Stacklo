@@ -2,8 +2,9 @@ package services
 
 import (
 	"bytes"
-	"context"
+
 	"encoding/json"
+	er "errors"
 	"io"
 	"net/http"
 	"time"
@@ -15,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func PaystackAPIWrapper(ctx context.Context, method string, url string, addHeaders map[string]string, data map[string]interface{}) (map[string]interface{}, error) {
+func PaystackAPIWrapper(method string, url string, addHeaders map[string]string, data map[string]interface{}) (map[string]interface{}, error) {
 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
 	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
 	var reqBody io.Reader
@@ -40,7 +41,7 @@ func PaystackAPIWrapper(ctx context.Context, method string, url string, addHeade
 	req, err := http.NewRequest(method, PAYSTACK_BASE_URL+url, reqBody)
 	if err != nil {
 		logger.Logger.Error("Failed to connect to PAYSTACK API", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to PAYSTACK API", err).(*errors.CustomError)
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to PAYSTACK API", err)
 	}
 
 	//set headers and additional headers by mappping each header to their key value pairs and looping over them
@@ -59,10 +60,9 @@ func PaystackAPIWrapper(ctx context.Context, method string, url string, addHeade
 	var resp *http.Response
 	resp, err = client.Do(req)
 	if err != nil {
-		logger.Logger.Error("Failed to return PAYSTACK API call response", zap.Any("method", resp.Request.Method), zap.Any("url", resp.Request.URL), zap.Int64("statusCode", int64(resp.StatusCode)), zap.Error(err))
+		logger.Logger.Error("Failed to return PAYSTACK API call response", zap.Any("method", method), zap.Any("url", url), zap.Error(err))
 		return nil, errors.Wrap(errors.TypeExternal, "Failed to return PAYSTACK API call response", err)
 	}
-
 	defer resp.Body.Close()
 
 	// Handle response
@@ -70,10 +70,10 @@ func PaystackAPIWrapper(ctx context.Context, method string, url string, addHeade
 		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Logger.Warn("Failed to read response body", zap.Error(err))
-			return nil, errors.Wrap(errors.TypeExternal, "Failed to read response body", err)
+			return nil, errors.Wrap(errors.TypeExternal, "Failed to read response body", er.New("Failed to read response body"))
 		}
-		logger.Logger.Error("PAYSTACK API Error Response", zap.Any("method", resp.Request.Method), zap.Any("url", resp.Request.URL), zap.Int64("statusCode", int64(resp.StatusCode)), zap.String("error", string(errorBody)))
-		return nil, errors.New(errors.TypeExternal, "PAYSTACK API Error")
+		logger.Logger.Error("PAYSTACK API Error Response", zap.Any("method", method), zap.Any("url", url), zap.String("error", string(errorBody)))
+		return nil, errors.Wrap(errors.TypeExternal, "PAYSTACK API Error", er.New(string(errorBody)))
 	}
 
 	var decodedResp map[string]interface{}
@@ -85,18 +85,20 @@ func PaystackAPIWrapper(ctx context.Context, method string, url string, addHeade
 	return decodedResp, nil
 }
 
-func GetBankList(ctx context.Context) (*types.Banks, error) {
+func GetBankList() (*types.Banks, error) {
 
 	headers := map[string]string{
 		"Content-Type": "application/json",
 	}
 
-	resp, err := PaystackAPIWrapper(ctx, "GET", string(types.UBankList), headers, nil)
+	resp, err := PaystackAPIWrapper("GET", string(types.UBankList), headers, nil)
 	if err != nil {
-		appErr, ok := err.(*errors.CustomError)
-		if !ok {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
 			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
 		}
+
+		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
 		return nil, appErr
 	}
 
@@ -116,50 +118,40 @@ func GetBankList(ctx context.Context) (*types.Banks, error) {
 	return &bankList, nil
 }
 
-// func ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error) {
-// 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
-// 	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
+func ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error) {
 
-// 	// Create client with timeout and retry
-// 	client := &http.Client{
-// 		Timeout: 15 * time.Second,
-// 	}
+	url := string(types.UResolveAccNum) + accountNumber + "&bank_code=" + bankCode
 
-// 	//create request
-// 	req, err := http.NewRequest("GET", PAYSTACK_BASE_URL+"/bank/resolve?account_number="+accountNumber+"&bank_code="+bankCode, nil)
-// 	if err != nil {
-// 		logger.Error("Request creation failed: ", err)
-// 		return nil, fmt.Errorf("failed to create request")
-// 	}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
 
-// 	// Set headers
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+PAYSTACK_API_KEY)
+	resp, err := PaystackAPIWrapper("GET", url, headers, nil)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
+		}
 
-// 	var resp *http.Response
-// 	resp, err = client.Do(req)
-// 	if err != nil {
-// 		logger.Error("Failed to make request: ", err)
-// 		return nil, fmt.Errorf("failed to send request")
-// 	}
+		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
+		return nil, appErr
+	}
 
-// 	defer resp.Body.Close()
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		logger.Logger.Warn("Failed to marshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
+	}
 
-// 	// Handle response
-// 	if resp.StatusCode >= 400 {
-// 		errorBody, _ := io.ReadAll(resp.Body)
-// 		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-// 		return nil, fmt.Errorf("API error: %s", string(errorBody))
-// 	}
+	var acctDetails types.AccountResolutionResponse
+	err = json.Unmarshal(jsonBytes, &acctDetails)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
 
-// 	var acctDetails types.AccountResolutionResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&acctDetails); err != nil {
-// 		logger.Error("failed to decode response: ", err)
-// 		return nil, fmt.Errorf("failed to decode API response")
-// 	}
-
-// 	return &acctDetails, nil
-// }
+	return &acctDetails, nil
+}
 
 // func CreateTransferRecipient(transferRecipient *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error) {
 // 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl

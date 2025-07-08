@@ -47,6 +47,7 @@ func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.W
 	err := row.Scan(&w.ID, &w.UserId, &w.Currency, &w.Balance, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankName, &w.Active, &w.CreatedAt, &w.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
+			logger.Logger.Error("Wallet not found", zap.Error(err), zap.String("wallet-id", id))
 			return nil, err
 		}
 		logger.Logger.Error("Database query failed", zap.Error(err), zap.String("wallet-id", id))
@@ -60,7 +61,7 @@ func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (
 	query := `
 		INSERT INTO wallets (
 			id, user_id, currency, balance,
-			virtual_account_name, virtual_account_number, virtual_bank_name, 
+			virtual_account_name, virtual_account_number, virtual_bank_name, active,
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
