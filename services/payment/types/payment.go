@@ -15,14 +15,17 @@ const (
 	UResolveAccNum  URL = "/bank/resolve?account_number="
 	UCreateTrfRecpt URL = "/transferrecipient"
 	UTransfer       URL = "/transfer"
+	UFTransfer      URL = "/transfer/finalize_transfer"
 )
 
 type StartTransferData struct {
-	Name          string `json:"name"`
-	AccountNumber string `json:"account_number"`
-	BankCode      string `json:"bank_code"`
-	Reason        string `json:"reason,omitempty"`
-	Amount        string `json:"amount"`
+	Name          string  `json:"name"`
+	Type          string  `json:"type,omitempty"`
+	Currency      string  `json:"currency,omitempty"`
+	AccountNumber string  `json:"account_number"`
+	BankCode      string  `json:"bank_code"`
+	Reason        string  `json:"reason,omitempty"`
+	Amount        float64 `json:"amount"`
 }
 type CreateTransferRecipientRequest struct {
 	Type          string `json:"type"`
@@ -58,11 +61,11 @@ type CreateTransferRecipientResponse struct {
 }
 
 type TransferOtpRequest struct {
-	Source    string `json:"source"`
-	Reason    string `json:"reason"`
-	Amount    string `json:"amount"`
-	Recipeint string `json:"recipient"`
-	Reference string `json:"reference"`
+	Source    string  `json:"source"`
+	Reason    string  `json:"reason"`
+	Amount    float64 `json:"amount"`
+	Recipeint string  `json:"recipient"`
+	Reference string  `json:"reference"`
 }
 
 type TransferOtpResponse struct {
@@ -84,12 +87,12 @@ type TransferOtpResponse struct {
 	} `json:"data"`
 }
 
-type QueuedTransferRequest struct {
+type FianlTransferRequest struct {
 	TransferCode string `json:"transfer_code"`
 	Otp          string `json:"otp"`
 }
 
-type QueuedTransferResponse struct {
+type FinalTransferResponse struct {
 	Status  bool   `json:"status"`
 	Message string `json:"message"`
 	Data    struct {
@@ -110,5 +113,49 @@ type QueuedTransferResponse struct {
 		Recipient     int64       `json:"recipient"`
 		CreatedAt     string      `json:"createdAt"`
 		UpdatedAt     string      `json:"updatedAt"`
+	} `json:"data"`
+}
+
+type FinalTransferJson struct {
+	Reference string `json:"reference"`
+	Amount    int    `json:"amount"`
+	Currency  string `json:"currency"`
+	Recipient int64  `json:"recipient"`
+	Reason    string `json:"reason"`
+	Status    string `json:"status"`
+}
+
+type PaystackError struct {
+	Status  string
+	Message string
+	Meta    []map[string]interface{}
+}
+type Banks struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+	Data    []struct {
+		Name        string      `json:"name"`
+		Slug        string      `json:"slug"`
+		Code        string      `json:"code"`
+		Longcode    string      `json:"longcode"`
+		Gateway     interface{} `json:"gateway"`
+		PayWithBank bool        `json:"pay_with_bank"`
+		Active      bool        `json:"active"`
+		IsDeleted   bool        `json:"is_deleted,omitempty"`
+		Country     string      `json:"country,omitempty"`
+		Currency    string      `json:"currency,omitempty"`
+		Type        string      `json:"type,omitempty"`
+		CreatedAt   string      `json:"createdAt,omitempty"`
+		UpdatedAt   string      `json:"updatedAt,omitempty"`
+	} `json:"data"`
+}
+
+type AccountResolutionResponse struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+	Data    struct {
+		AccountNumber string `json:"account_number"`
+		AccountName   string `json:"account_name"`
+		BankID        int    `json:"bank_id"`
 	} `json:"data"`
 }

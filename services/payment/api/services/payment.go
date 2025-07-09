@@ -41,7 +41,7 @@ func PaystackAPIWrapper(method string, url string, addHeaders map[string]string,
 	req, err := http.NewRequest(method, PAYSTACK_BASE_URL+url, reqBody)
 	if err != nil {
 		logger.Logger.Error("Failed to connect to PAYSTACK API", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to PAYSTACK API", err)
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to PAYSTACK API", err).(*errors.CustomError)
 	}
 
 	//set headers and additional headers by mappping each header to their key value pairs and looping over them
@@ -61,7 +61,7 @@ func PaystackAPIWrapper(method string, url string, addHeaders map[string]string,
 	resp, err = client.Do(req)
 	if err != nil {
 		logger.Logger.Error("Failed to return PAYSTACK API call response", zap.Any("method", method), zap.Any("url", url), zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to return PAYSTACK API call response", err)
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to return PAYSTACK API call response", err).(*errors.CustomError)
 	}
 	defer resp.Body.Close()
 
@@ -72,8 +72,8 @@ func PaystackAPIWrapper(method string, url string, addHeaders map[string]string,
 			logger.Logger.Warn("Failed to read response body", zap.Error(err))
 			return nil, errors.Wrap(errors.TypeExternal, "Failed to read response body", er.New("Failed to read response body"))
 		}
-		logger.Logger.Error("PAYSTACK API Error Response", zap.Any("method", method), zap.Any("url", url), zap.String("error", string(errorBody)))
-		return nil, errors.Wrap(errors.TypeExternal, "PAYSTACK API Error", er.New(string(errorBody)))
+		logger.Logger.Error("PAYSTACK API Error Response", zap.Any("method", method), zap.Any("url", url), zap.Int("code", resp.StatusCode), zap.String("error", string(errorBody)))
+		return nil, errors.Wrap(errors.TypeExternal, "PAYSTACK API Error", er.New(string(errorBody))).(*errors.CustomError)
 	}
 
 	var decodedResp map[string]interface{}
@@ -153,155 +153,131 @@ func ResolveAccountNumber(accountNumber string, bankCode string) (*types.Account
 	return &acctDetails, nil
 }
 
-// func CreateTransferRecipient(transferRecipient *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error) {
-// 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
-// 	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
+func CreateTransferRecipient(transferRecipient *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error) {
 
-// 	// Create client with timeout and retry
-// 	client := &http.Client{
-// 		Timeout: 15 * time.Second,
-// 	}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
 
-// 	transferRecipientJSON, err := json.Marshal(transferRecipient)
-// 	if err != nil {
-// 		logger.Error("Failed to marshal customer request: ", err)
-// 		return nil, fmt.Errorf("failed to prepare customer data")
-// 	}
+	var body map[string]interface{}
 
-// 	//create request
-// 	req, err := http.NewRequest("POST", PAYSTACK_BASE_URL+"/transferrecipient", bytes.NewBuffer(transferRecipientJSON))
-// 	if err != nil {
-// 		logger.Error("Request creation failed: ", err)
-// 		return nil, fmt.Errorf("failed to create request")
-// 	}
+	bytes, err := json.Marshal(transferRecipient)
+	if err != nil {
+		return nil, err
+	}
 
-// 	// Set headers
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+PAYSTACK_API_KEY)
+	err = json.Unmarshal(bytes, &body)
 
-// 	var resp *http.Response
-// 	resp, err = client.Do(req)
-// 	if err != nil {
-// 		logger.Error("Failed to make request: ", err)
-// 		return nil, fmt.Errorf("failed to send request")
-// 	}
+	resp, err := PaystackAPIWrapper("POST", string(types.UCreateTrfRecpt), headers, body)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
+		}
 
-// 	defer resp.Body.Close()
+		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
+		return nil, appErr
+	}
 
-// 	// Handle response
-// 	if resp.StatusCode >= 400 {
-// 		errorBody, _ := io.ReadAll(resp.Body)
-// 		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-// 		return nil, fmt.Errorf("API error: %s", string(errorBody))
-// 	}
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		logger.Logger.Warn("Failed to marshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
+	}
 
-// 	var tRecipient types.CreateTransferRecipientResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&tRecipient); err != nil {
-// 		logger.Error("failed to decode response: ", err)
-// 		return nil, fmt.Errorf("failed to decode API response")
-// 	}
+	var tRecipient types.CreateTransferRecipientResponse
+	err = json.Unmarshal(jsonBytes, &tRecipient)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
 
-// 	return &tRecipient, nil
-// }
+	return &tRecipient, nil
 
-// func RequestOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error) {
-// 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
-// 	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
+}
 
-// 	// Create client with timeout and retry
-// 	client := &http.Client{
-// 		Timeout: 15 * time.Second,
-// 	}
+func RequestOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error) {
 
-// 	payloadJSON, err := json.Marshal(payload)
-// 	if err != nil {
-// 		logger.Error("Failed to marshal customer request: ", err)
-// 		return nil, fmt.Errorf("failed to prepare customer data")
-// 	}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
 
-// 	//create request
-// 	req, err := http.NewRequest("POST", PAYSTACK_BASE_URL+"/transfer", bytes.NewBuffer(payloadJSON))
-// 	if err != nil {
-// 		logger.Error("Request creation failed: ", err)
-// 		return nil, fmt.Errorf("failed to create request")
-// 	}
+	var body map[string]interface{}
 
-// 	// Set headers
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+PAYSTACK_API_KEY)
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
 
-// 	var resp *http.Response
-// 	resp, err = client.Do(req)
-// 	if err != nil {
-// 		logger.Error("Failed to make request: ", err)
-// 		return nil, fmt.Errorf("failed to send request")
-// 	}
+	err = json.Unmarshal(bytes, &body)
 
-// 	defer resp.Body.Close()
+	resp, err := PaystackAPIWrapper("POST", string(types.UTransfer), headers, body)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
+		}
 
-// 	// Handle response
-// 	if resp.StatusCode >= 400 {
-// 		errorBody, _ := io.ReadAll(resp.Body)
-// 		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-// 		return nil, fmt.Errorf("API error: %s", string(errorBody))
-// 	}
+		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
+		return nil, appErr
+	}
 
-// 	var transfer types.TransferOtpResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&transfer); err != nil {
-// 		logger.Error("failed to decode response: ", err)
-// 		return nil, fmt.Errorf("failed to decode API response")
-// 	}
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		logger.Logger.Warn("Failed to marshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
+	}
 
-// 	return &transfer, nil
-// }
+	var transfer types.TransferOtpResponse
+	err = json.Unmarshal(jsonBytes, &transfer)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
 
-// func FinalTransfer(payload *types.QueuedTransferRequest) (*types.QueuedTransferResponse, error) {
-// 	PAYSTACK_BASE_URL := config.Cfg.PaystackBaseUrl
-// 	PAYSTACK_API_KEY := config.Cfg.PaystackTestKey
+	return &transfer, nil
 
-// 	// Create client with timeout and retry
-// 	client := &http.Client{
-// 		Timeout: 15 * time.Second,
-// 	}
+}
 
-// 	payloadJSON, err := json.Marshal(payload)
-// 	if err != nil {
-// 		logger.Error("Failed to marshal customer request: ", err)
-// 		return nil, fmt.Errorf("failed to prepare customer data")
-// 	}
+func Transfer(trf types.FianlTransferRequest) (*types.FinalTransferResponse, error) {
 
-// 	//create request
-// 	req, err := http.NewRequest("POST", PAYSTACK_BASE_URL+"/transfer", bytes.NewBuffer(payloadJSON))
-// 	if err != nil {
-// 		logger.Error("Request creation failed: ", err)
-// 		return nil, fmt.Errorf("failed to create request")
-// 	}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
 
-// 	// Set headers
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+PAYSTACK_API_KEY)
+	var body map[string]interface{}
 
-// 	var resp *http.Response
-// 	resp, err = client.Do(req)
-// 	if err != nil {
-// 		logger.Error("Failed to make request: ", err)
-// 		return nil, fmt.Errorf("failed to send request")
-// 	}
+	bytes, err := json.Marshal(trf)
+	if err != nil {
+		return nil, err
+	}
 
-// 	defer resp.Body.Close()
+	err = json.Unmarshal(bytes, &body)
 
-// 	// Handle response
-// 	if resp.StatusCode >= 400 {
-// 		errorBody, _ := io.ReadAll(resp.Body)
-// 		logger.Error("API error" + fmt.Sprint(resp.StatusCode) + ":" + string(errorBody))
-// 		return nil, fmt.Errorf("API error: %s", string(errorBody))
-// 	}
+	resp, err := PaystackAPIWrapper("POST", string(types.UFTransfer), headers, body)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
+		}
 
-// 	var finalTransfer types.QueuedTransferResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&finalTransfer); err != nil {
-// 		logger.Error("failed to decode response: ", err)
-// 		return nil, fmt.Errorf("failed to decode API response")
-// 	}
+		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
+		return nil, appErr
+	}
 
-// 	return &finalTransfer, nil
-// }
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		logger.Logger.Warn("Failed to marshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
+	}
+
+	var finalTransfer types.FinalTransferResponse
+	err = json.Unmarshal(jsonBytes, &finalTransfer)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
+
+	return &finalTransfer, nil
+
+}
