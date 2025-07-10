@@ -6,9 +6,13 @@ import (
 	"time"
 
 	//natsclient "github.com/Creative-genius001/Stacklo/pkg/natsClient"
+	"github.com/Creative-genius001/Stacklo/services/payment/api/handlers"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	"github.com/Creative-genius001/Stacklo/services/payment/middlewares"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -20,6 +24,7 @@ func main() {
 
 	//init config
 	config.Init()
+	c := config.Cfg
 
 	if err := godotenv.Load("../../.env"); err != nil {
 		logger.Logger.Fatal("No .env file found or failed to load", zap.Error(err))
@@ -37,7 +42,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	expectedHost := "localhost:" + config.Cfg.Port
+	expectedHost := "localhost:" + c.Port
 
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -62,18 +67,23 @@ func main() {
 		c.JSON(404, gin.H{"error": "404 not found"})
 	})
 
-	//init routes
-	routes.InitializeRoutes(r)
-
 	//Configure CORS
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AddAllowHeaders("Authorization")
 	corsConfig.AllowOrigins = []string{"*"}
 	r.Use(cors.New(corsConfig))
 
+	binanceCli := binance.NewBinanceClient(c.BinanceAPIKey, c.BinanceSecretKey, c.BinanceBaseUrl)
+	paystackCli := paystack.NewPaystackClient(c.PaystackTestKey, c.PaystackBaseUrl)
+
+	paymentSvc := services.NewPaymentService(binanceCli, paystackCli)
+	paymentHdlr := handlers.NewpaymentService(paymentSvc)
 	//initialize NATS
 	// natsclient.InitNATS()
 	// defer natsclient.Close()
+
+	//init routes
+	routes.InitializeRoutes(r, *paymentHdlr)
 
 	//startup server
 	PORT := config.Cfg.Port

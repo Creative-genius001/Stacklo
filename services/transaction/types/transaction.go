@@ -6,11 +6,11 @@ type Transaction struct {
 	ID              string             `json:"id"`
 	UserId          string             `json:"user_id"`
 	WalletId        string             `json:"wallet_id"`
-	Currency        string             `json:"currency"`
-	Status          float64            `json:"status"`
+	Currency        string             `json:"currency"` //NGN, BTC,ETH,USDT
+	Status          float64            `json:"status"`   //PENDING,SUCCESS,FAILED,REVERSED,PROCESSING
 	Reason          float64            `json:"reason"`
-	TransactionType string             `json:"transaction_type"`
-	EntryType       string             `json:"entry_type"`
+	TransactionType string             `json:"transaction_type"` //CRYPTO,FIAT
+	EntryType       string             `json:"entry_type"`       //CREDIT,DEBIT
 	FiatDetails     *FiatTransaction   `json:"fiat_details,omitempty"`
 	CryptoDetails   *CryptoTransaction `json:"crypto_details,omitempty"`
 	CreatedAt       time.Time          `json:"created_at"`

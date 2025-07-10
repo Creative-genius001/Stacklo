@@ -13,9 +13,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetBankList(c *gin.Context) {
+type PaymentService struct {
+	payment services.PaymentService
+}
 
-	banks, err := services.GetBankList()
+func NewpaymentService(ps services.PaymentService) *PaymentService {
+	return &PaymentService{payment: ps}
+}
+
+func (s *PaymentService) GetBankList(c *gin.Context) {
+	banks, err := s.payment.GetBankList()
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
@@ -39,8 +46,7 @@ func GetBankList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": banks})
 }
 
-func ResolveAccountNumber(c *gin.Context) {
-
+func (s *PaymentService) ResolveAccountNumber(c *gin.Context) {
 	accountNumber := c.Query("account_number")
 	bankCode := c.Query("bank_code")
 	if accountNumber == "" && bankCode == "" {
@@ -49,7 +55,7 @@ func ResolveAccountNumber(c *gin.Context) {
 		return
 	}
 
-	resp, err := services.ResolveAccountNumber(accountNumber, bankCode)
+	resp, err := s.payment.ResolveAccountNumber(accountNumber, bankCode)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
@@ -73,7 +79,7 @@ func ResolveAccountNumber(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }
 
-func RequestOTP(c *gin.Context) {
+func (s *PaymentService) GetOTP(c *gin.Context) {
 	var inputData types.StartTransferData
 	if err := c.ShouldBindJSON(&inputData); err != nil {
 		logger.Logger.Error("Invalid input data", zap.Error(err))
@@ -89,7 +95,7 @@ func RequestOTP(c *gin.Context) {
 		Currency:      "NGN",
 	}
 
-	recipient, err := services.CreateTransferRecipient(&trfRecipientData)
+	recipient, err := s.payment.CreateTransferRecipient(&trfRecipientData)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
@@ -120,7 +126,7 @@ func RequestOTP(c *gin.Context) {
 		Reference: referenceNumber,
 	}
 
-	otp, err := services.RequestOTP(&otpRequestData)
+	otp, err := s.payment.GetOTP(&otpRequestData)
 	// if err != nil {
 	// 	signedStr, tokenErr := utils.CreateRetryTokenOtpRequest(referenceNumber, recipient.Data.RecipientCode)
 	// 	if tokenErr != nil {
@@ -191,7 +197,7 @@ func RequestOTP(c *gin.Context) {
 // 	c.JSON(http.StatusOK, gin.H{"transfer_code": otp.Data.TransferCode})
 // }
 
-func Transfer(c *gin.Context) {
+func (s *PaymentService) Transfer(c *gin.Context) {
 	var data types.FianlTransferRequest
 
 	if err := c.BindJSON(&data); err != nil {
@@ -200,7 +206,7 @@ func Transfer(c *gin.Context) {
 		return
 	}
 
-	resp, err := services.Transfer(data)
+	resp, err := s.payment.Transfer(data)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {

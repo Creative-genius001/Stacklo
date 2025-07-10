@@ -1,13 +1,5 @@
 package types
 
-import "context"
-
-type Services interface {
-	GetBankList() (*Banks, error)
-	PaystackAPIWrapper(ctx context.Context, url string, headers map[string]interface{}, data map[string]interface{}) (map[string]interface{}, error)
-	GetOTP(ctx context.Context, trf TransferOtpRequest) (*TransferOtpResponse, error)
-}
-
 type URL string
 
 const (

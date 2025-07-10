@@ -13,7 +13,6 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"go.uber.org/zap"
 
-	//"github.com/Creative-genius001/go-logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
