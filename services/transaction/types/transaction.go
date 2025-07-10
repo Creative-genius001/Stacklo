@@ -1,0 +1,42 @@
+package types
+
+import "time"
+
+type Transaction struct {
+	ID              string             `json:"id"`
+	UserId          string             `json:"user_id"`
+	WalletId        string             `json:"wallet_id"`
+	Currency        string             `json:"currency"`
+	Status          float64            `json:"status"`
+	Reason          float64            `json:"reason"`
+	TransactionType string             `json:"transaction_type"`
+	EntryType       string             `json:"entry_type"`
+	FiatDetails     *FiatTransaction   `json:"fiat_details,omitempty"`
+	CryptoDetails   *CryptoTransaction `json:"crypto_details,omitempty"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+}
+
+type FiatTransaction struct {
+	ID            string  `json:"id"`
+	ReferenceID   string  `json:"reference_id"`
+	BankName      string  `json:"bank_name"`
+	AccountName   string  `json:"account_name"`
+	AccountNumber string  `json:"account_number"`
+	SenderName    string  `json:"sender_name"`
+	RecipientName string  `json:"recipient_name"`
+	Fee           float64 `json:"fee"`
+	NetAmount     float64 `json:"net_amount"`
+}
+
+type CryptoTransaction struct {
+	ID                        string  `json:"id"`
+	ExchangeOrderID           string  `json:"exchange_order_id"`
+	BlockchainTransactionHash string  `json:"blockchain_transaction_hash"`
+	SenderAddress             string  `json:"sender_address"`
+	ReceiverAddress           string  `json:"receiver_address"`
+	Network                   string  `json:"network"`
+	NetworkFee                float64 `json:"network_fee"`
+	PriceAtTransaction        float64 `json:"price_at_transaction"`
+	QuoteCurrencyAmount       float64 `json:"quote_currency_amount"`
+}
