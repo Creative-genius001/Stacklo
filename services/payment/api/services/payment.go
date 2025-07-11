@@ -3,15 +3,14 @@ package services
 import (
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
-	"github.com/Creative-genius001/Stacklo/services/payment/types"
 )
 
 type PaymentService interface {
-	GetBankList() (*types.Banks, error)
-	GetOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error)
-	ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error)
-	CreateTransferRecipient(payload *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error)
-	Transfer(payload types.FianlTransferRequest) (*types.FinalTransferResponse, error)
+	GetBankList() (*paystack.Banks, error)
+	GetOTP(payload *paystack.TransferOtpRequest) (*paystack.TransferOtpResponse, error)
+	ResolveAccountNumber(accountNumber string, bankCode string) (*paystack.AccountResolutionResponse, error)
+	CreateTransferRecipient(payload *paystack.CreateTransferRecipientRequest) (*paystack.CreateTransferRecipientResponse, error)
+	Transfer(payload paystack.FianlTransferRequest) (*paystack.FinalTransferResponse, error)
 }
 
 type paymentServiceImpl struct {
@@ -23,7 +22,7 @@ func NewPaymentService(b binance.Binance, p paystack.Paystack) PaymentService {
 	return &paymentServiceImpl{p, b}
 }
 
-func (p *paymentServiceImpl) GetBankList() (*types.Banks, error) {
+func (p *paymentServiceImpl) GetBankList() (*paystack.Banks, error) {
 
 	res, err := p.paystackClient.GetBankList()
 	if err != nil {
@@ -32,7 +31,7 @@ func (p *paymentServiceImpl) GetBankList() (*types.Banks, error) {
 	return res, nil
 }
 
-func (p *paymentServiceImpl) ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error) {
+func (p *paymentServiceImpl) ResolveAccountNumber(accountNumber string, bankCode string) (*paystack.AccountResolutionResponse, error) {
 	res, err := p.paystackClient.ResolveAccountNumber(accountNumber, bankCode)
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func (p *paymentServiceImpl) ResolveAccountNumber(accountNumber string, bankCode
 	return res, nil
 }
 
-func (p *paymentServiceImpl) CreateTransferRecipient(transferRecipient *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error) {
+func (p *paymentServiceImpl) CreateTransferRecipient(transferRecipient *paystack.CreateTransferRecipientRequest) (*paystack.CreateTransferRecipientResponse, error) {
 	res, err := p.paystackClient.CreateTransferRecipient(transferRecipient)
 	if err != nil {
 		return nil, err
@@ -48,7 +47,7 @@ func (p *paymentServiceImpl) CreateTransferRecipient(transferRecipient *types.Cr
 	return res, nil
 }
 
-func (p *paymentServiceImpl) GetOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error) {
+func (p *paymentServiceImpl) GetOTP(payload *paystack.TransferOtpRequest) (*paystack.TransferOtpResponse, error) {
 	res, err := p.paystackClient.GetOTP(payload)
 	if err != nil {
 		return nil, err
@@ -56,7 +55,7 @@ func (p *paymentServiceImpl) GetOTP(payload *types.TransferOtpRequest) (*types.T
 	return res, nil
 }
 
-func (p *paymentServiceImpl) Transfer(payload types.FianlTransferRequest) (*types.FinalTransferResponse, error) {
+func (p *paymentServiceImpl) Transfer(payload paystack.FianlTransferRequest) (*paystack.FinalTransferResponse, error) {
 	res, err := p.paystackClient.Transfer(payload)
 	if err != nil {
 		return nil, err

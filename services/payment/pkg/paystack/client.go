@@ -8,29 +8,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Creative-genius001/Stacklo/services/payment/types"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"go.uber.org/zap"
 )
 
-type URL string
-
-const (
-	UBankList       URL = "/bank?currency=NGN"
-	UResolveAccNum  URL = "/bank/resolve?account_number="
-	UCreateTrfRecpt URL = "/transferrecipient"
-	UTransfer       URL = "/transfer"
-	UFTransfer      URL = "/transfer/finalize_transfer"
-)
-
 type Paystack interface {
-	GetBankList() (*types.Banks, error)
-	GetOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error)
+	GetBankList() (*Banks, error)
+	GetOTP(payload *TransferOtpRequest) (*TransferOtpResponse, error)
 	PaystackAPIWrapper(method string, url string, addHeaders map[string]string, data map[string]interface{}) (map[string]interface{}, error)
-	ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error)
-	CreateTransferRecipient(payload *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error)
-	Transfer(payload types.FianlTransferRequest) (*types.FinalTransferResponse, error)
+	ResolveAccountNumber(accountNumber string, bankCode string) (*AccountResolutionResponse, error)
+	CreateTransferRecipient(payload *CreateTransferRecipientRequest) (*CreateTransferRecipientResponse, error)
+	Transfer(payload FianlTransferRequest) (*FinalTransferResponse, error)
 }
 
 type paystackClient struct {
@@ -47,7 +36,7 @@ func NewPaystackClient(apiKey, baseURL string) Paystack {
 	}
 }
 
-func (p *paystackClient) GetBankList() (*types.Banks, error) {
+func (p *paystackClient) GetBankList() (*Banks, error) {
 
 	resp, err := p.PaystackAPIWrapper(http.MethodGet, string(UBankList), nil, nil)
 	if err != nil {
@@ -66,7 +55,7 @@ func (p *paystackClient) GetBankList() (*types.Banks, error) {
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
 	}
 
-	var result types.Banks
+	var result Banks
 	err = json.Unmarshal(jsonBytes, &result)
 	if err != nil {
 		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
@@ -76,7 +65,7 @@ func (p *paystackClient) GetBankList() (*types.Banks, error) {
 	return &result, nil
 }
 
-func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode string) (*types.AccountResolutionResponse, error) {
+func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode string) (*AccountResolutionResponse, error) {
 	url := string(UResolveAccNum) + accountNumber + "&bank_code=" + bankCode
 
 	resp, err := p.PaystackAPIWrapper(http.MethodGet, url, nil, nil)
@@ -96,7 +85,7 @@ func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode str
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
 	}
 
-	var result types.AccountResolutionResponse
+	var result AccountResolutionResponse
 	err = json.Unmarshal(jsonBytes, &result)
 	if err != nil {
 		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
@@ -106,7 +95,7 @@ func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode str
 	return &result, nil
 }
 
-func (p *paystackClient) CreateTransferRecipient(payload *types.CreateTransferRecipientRequest) (*types.CreateTransferRecipientResponse, error) {
+func (p *paystackClient) CreateTransferRecipient(payload *CreateTransferRecipientRequest) (*CreateTransferRecipientResponse, error) {
 
 	var body map[string]interface{}
 
@@ -134,7 +123,7 @@ func (p *paystackClient) CreateTransferRecipient(payload *types.CreateTransferRe
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
 	}
 
-	var result types.CreateTransferRecipientResponse
+	var result CreateTransferRecipientResponse
 	err = json.Unmarshal(jsonBytes, &result)
 	if err != nil {
 		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
@@ -144,7 +133,7 @@ func (p *paystackClient) CreateTransferRecipient(payload *types.CreateTransferRe
 	return &result, nil
 }
 
-func (p *paystackClient) GetOTP(payload *types.TransferOtpRequest) (*types.TransferOtpResponse, error) {
+func (p *paystackClient) GetOTP(payload *TransferOtpRequest) (*TransferOtpResponse, error) {
 	var body map[string]interface{}
 
 	bytes, err := json.Marshal(payload)
@@ -171,7 +160,7 @@ func (p *paystackClient) GetOTP(payload *types.TransferOtpRequest) (*types.Trans
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
 	}
 
-	var result types.TransferOtpResponse
+	var result TransferOtpResponse
 	err = json.Unmarshal(jsonBytes, &result)
 	if err != nil {
 		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
@@ -181,7 +170,7 @@ func (p *paystackClient) GetOTP(payload *types.TransferOtpRequest) (*types.Trans
 	return &result, nil
 }
 
-func (p *paystackClient) Transfer(payload types.FianlTransferRequest) (*types.FinalTransferResponse, error) {
+func (p *paystackClient) Transfer(payload FianlTransferRequest) (*FinalTransferResponse, error) {
 	var body map[string]interface{}
 
 	bytes, err := json.Marshal(payload)
@@ -208,7 +197,7 @@ func (p *paystackClient) Transfer(payload types.FianlTransferRequest) (*types.Fi
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to marshal request body", err)
 	}
 
-	var result types.FinalTransferResponse
+	var result FinalTransferResponse
 	err = json.Unmarshal(jsonBytes, &result)
 	if err != nil {
 		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))

@@ -11,9 +11,10 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	"github.com/Creative-genius001/Stacklo/services/payment/middlewares"
-	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
+	bn "github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
+	"github.com/adshao/go-binance/v2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -73,7 +74,8 @@ func main() {
 	corsConfig.AllowOrigins = []string{"*"}
 	r.Use(cors.New(corsConfig))
 
-	binanceCli := binance.NewBinanceClient(c.BinanceAPIKey, c.BinanceSecretKey, c.BinanceBaseUrl)
+	bCli := binance.NewClient(c.BinanceAPIKey, c.BinanceSecretKey)
+	binanceCli := bn.NewBinanceClient(c.BinanceBaseUrl, bCli)
 	paystackCli := paystack.NewPaystackClient(c.PaystackTestKey, c.PaystackBaseUrl)
 
 	paymentSvc := services.NewPaymentService(binanceCli, paystackCli)

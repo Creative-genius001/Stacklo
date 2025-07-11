@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
-	"github.com/Creative-genius001/Stacklo/services/payment/types"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -80,14 +80,14 @@ func (s *PaymentService) ResolveAccountNumber(c *gin.Context) {
 }
 
 func (s *PaymentService) GetOTP(c *gin.Context) {
-	var inputData types.StartTransferData
+	var inputData paystack.StartTransferData
 	if err := c.ShouldBindJSON(&inputData); err != nil {
 		logger.Logger.Error("Invalid input data", zap.Error(err))
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
-	trfRecipientData := types.CreateTransferRecipientRequest{
+	trfRecipientData := paystack.CreateTransferRecipientRequest{
 		Type:          "nuban",
 		Name:          inputData.Name,
 		AccountNumber: inputData.AccountNumber,
@@ -118,7 +118,7 @@ func (s *PaymentService) GetOTP(c *gin.Context) {
 
 	referenceNumber := uuid.New().String()
 
-	otpRequestData := types.TransferOtpRequest{
+	otpRequestData := paystack.TransferOtpRequest{
 		Source:    "balance",
 		Reason:    inputData.Reason,
 		Amount:    inputData.Amount,
@@ -178,7 +178,7 @@ func (s *PaymentService) GetOTP(c *gin.Context) {
 // 		return
 // 	}
 
-// 	otpRequestData := types.TransferOtpRequest{
+// 	otpRequestData := paystack.TransferOtpRequest{
 // 		Source:    "balance",
 // 		Reason:    inputData.Reason,
 // 		Amount:    inputData.Amount,
@@ -198,7 +198,7 @@ func (s *PaymentService) GetOTP(c *gin.Context) {
 // }
 
 func (s *PaymentService) Transfer(c *gin.Context) {
-	var data types.FianlTransferRequest
+	var data paystack.FianlTransferRequest
 
 	if err := c.BindJSON(&data); err != nil {
 		logger.Logger.Error("Invalid input data", zap.Error(err))
@@ -227,7 +227,7 @@ func (s *PaymentService) Transfer(c *gin.Context) {
 		}
 	}
 
-	json := types.FinalTransferJson{
+	json := paystack.FinalTransferJson{
 		Amount:    resp.Data.Amount,
 		Recipient: resp.Data.Recipient,
 		Reference: resp.Data.Reference,
