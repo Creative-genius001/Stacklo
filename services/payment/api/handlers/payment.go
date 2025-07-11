@@ -237,3 +237,29 @@ func (s *PaymentService) Transfer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": json})
 }
+
+func (s *PaymentService) Ping(c *gin.Context) {
+
+	err := s.payment.Ping()
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			logger.Logger.Error("Unexpected error from BINANCE WRAPPER")
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+		switch appErr.Type {
+		case errors.TypeInternal:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		case errors.TypeExternal:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeExternal})
+			return
+		default:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "type": "ping"})
+}

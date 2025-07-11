@@ -2,6 +2,15 @@ package paystack
 
 type URL string
 
+type Paystack interface {
+	GetBankList() (*Banks, error)
+	GetOTP(payload *TransferOtpRequest) (*TransferOtpResponse, error)
+	PaystackAPIWrapper(method string, url string, addHeaders map[string]string, data []byte) ([]byte, error)
+	ResolveAccountNumber(accountNumber string, bankCode string) (*AccountResolutionResponse, error)
+	CreateTransferRecipient(payload *CreateTransferRecipientRequest) (*CreateTransferRecipientResponse, error)
+	Transfer(payload FianlTransferRequest) (*FinalTransferResponse, error)
+}
+
 const (
 	UBankList       URL = "/bank?currency=NGN"
 	UResolveAccNum  URL = "/bank/resolve?account_number="

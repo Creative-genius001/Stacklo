@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 )
@@ -11,6 +13,8 @@ type PaymentService interface {
 	ResolveAccountNumber(accountNumber string, bankCode string) (*paystack.AccountResolutionResponse, error)
 	CreateTransferRecipient(payload *paystack.CreateTransferRecipientRequest) (*paystack.CreateTransferRecipientResponse, error)
 	Transfer(payload paystack.FianlTransferRequest) (*paystack.FinalTransferResponse, error)
+	Ping() error
+	PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error)
 }
 
 type paymentServiceImpl struct {
@@ -61,4 +65,16 @@ func (p *paymentServiceImpl) Transfer(payload paystack.FianlTransferRequest) (*p
 		return nil, err
 	}
 	return res, nil
+}
+
+func (p *paymentServiceImpl) Ping() error {
+	err := p.binanceClient.Ping()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *paymentServiceImpl) PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error) {
+	panic("unimplemented")
 }

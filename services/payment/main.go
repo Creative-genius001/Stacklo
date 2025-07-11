@@ -14,7 +14,8 @@ import (
 	bn "github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
-	"github.com/adshao/go-binance/v2"
+
+	// "github.com/adshao/go-binance/v2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -74,8 +75,8 @@ func main() {
 	corsConfig.AllowOrigins = []string{"*"}
 	r.Use(cors.New(corsConfig))
 
-	bCli := binance.NewClient(c.BinanceAPIKey, c.BinanceSecretKey)
-	binanceCli := bn.NewBinanceClient(c.BinanceBaseUrl, bCli)
+	// bCli := binance.NewClient(c.BinanceAPIKey, c.BinanceSecretKey)
+	binanceCli := bn.NewBinanceClient(c)
 	paystackCli := paystack.NewPaystackClient(c.PaystackTestKey, c.PaystackBaseUrl)
 
 	paymentSvc := services.NewPaymentService(binanceCli, paystackCli)
@@ -88,7 +89,7 @@ func main() {
 	routes.InitializeRoutes(r, *paymentHdlr)
 
 	//startup server
-	PORT := config.Cfg.Port
+	PORT := c.Port
 	s := &http.Server{
 		Addr:           ":" + PORT,
 		Handler:        r,
