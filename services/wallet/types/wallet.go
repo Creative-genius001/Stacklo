@@ -115,10 +115,11 @@ type Wallet struct {
 	Active               bool      `json:"active"`
 	UserId               string    `json:"user_id"`
 	Currency             string    `json:"currency"`
+	WalletType           string    `json:"wallet_type"`
 	Balance              float64   `json:"balance,omitempty"`
-	VirtualAccountName   string    `json:"virtual_account_name"`
-	VirtualAccountNumber string    `json:"virtual_account_number"`
-	VirtualBankName      string    `json:"virtual_bank_name"`
+	VirtualAccountName   *string   `json:"virtual_account_name"`
+	VirtualAccountNumber *string   `json:"virtual_account_number"`
+	VirtualBankName      *string   `json:"virtual_bank_name"`
 	CreatedAt            time.Time `json:"created_at"`
 	UpdatedAt            time.Time `json:"updated_at"`
 }

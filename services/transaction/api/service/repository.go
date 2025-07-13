@@ -5,19 +5,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+	"github.com/Creative-genius001/Stacklo/services/transaction/types"
+	"github.com/Creative-genius001/Stacklo/services/transaction/utils/logger"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
-	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )
 
 type Repository interface {
-	GetWallet(ctx context.Context, id string) (*types.Wallet, error)
-	CreateWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error)
-	Deposit(ctx context.Context, amount string) error
-	Withdraw(ctx context.Context, amount string) error
-	Close()
+	GetAllTransactions(ctx context.Context, id string) ([]*types.Transaction, error)
+	CreateTransaction(ctx context.Context, w types.Transaction) (*types.Transaction, error)
+	GetSingleTransaction(ctx context.Context, id string) (*types.Transaction, error)
 }
 
 type postgresRepository struct {
@@ -39,8 +37,8 @@ func (r *postgresRepository) Close() {
 	r.db.Close(context.Background())
 }
 
-func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
-	var w types.Wallet
+func (r *postgresRepository) GetAllTransactions(ctx context.Context, id string) ([]*types.Transaction, error) {
+	var w []types.Transaction
 	query := `SELECT id, user_id, currency, balance,virtual_account_name, virtual_account_number,  virtual_bank_name,active,  created_at, updated_at
           FROM wallets WHERE id = $1`
 	row := r.db.QueryRow(ctx, query, id)
@@ -56,7 +54,7 @@ func (r *postgresRepository) GetWallet(ctx context.Context, id string) (*types.W
 	return &w, nil
 }
 
-func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error) {
+func (r *postgresRepository) CreateWallet(ctx context.Context, w types.Transaction) (*types.Transaction, error) {
 
 	query := `
 		INSERT INTO wallets (

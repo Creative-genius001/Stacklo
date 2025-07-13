@@ -9,8 +9,10 @@ func InitializeRoutes(router *gin.Engine, h *handler.Handler) {
 
 	walletRouter := router.Group("/api/wallet")
 	{
-		walletRouter.GET("/:id", h.GetWallet)
-		walletRouter.POST("/create", h.CreateWallet)
+		walletRouter.GET("/:id", h.GetAllWallets)
+		walletRouter.GET("/fiat/:id", h.GetFiatWallet)
+		walletRouter.POST("/fiat/create", h.CreateFiatWallet)
+		walletRouter.POST("/crypto/create", h.CreateCryptoWallet)
 		// walletRouter.POST("/deposit", handler.CreateWallet)
 		// walletRouter.GET("/balance", handler.CreateWallet)
 		// walletRouter.POST("/withdraw", handler.CreateWallet)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/google/uuid"
@@ -18,8 +19,10 @@ import (
 )
 
 type Service interface {
-	GetWallet(ctx context.Context, id string) (*types.Wallet, error)
-	CreateWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error)
+	GetFiatWallet(ctx context.Context, id string) (*types.Wallet, error)
+	CreateFiatWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error)
+	CreateCryptoWallet(ctx context.Context, wt types.Wallet) error
+	GetAllWallets(ctx context.Context, id string) ([]*types.Wallet, error)
 }
 
 type walletService struct {
@@ -145,17 +148,15 @@ func CreateWalletPaystack(c types.CreateCustomerRequest) (*types.Wallet, error) 
 	// 	return nil, err
 	// }
 
-	currentTime := time.Now()
 	accountName := c.FirstName + c.LastName + "/ PAYSTACK"
 
 	wPayStack := types.Wallet{
 		Currency:             "NGN",
 		Active:               true,
-		VirtualAccountName:   accountName,
-		VirtualAccountNumber: "0091728654",
-		VirtualBankName:      "Providus Bank",
-		CreatedAt:            currentTime,
-		UpdatedAt:            currentTime,
+		VirtualAccountName:   utils.StringPtr(accountName),
+		VirtualAccountNumber: utils.StringPtr("0091728654"),
+		VirtualBankName:      utils.StringPtr("Providus Bank"),
+		WalletType:           "FIAT",
 	}
 
 	// wPayStack := types.Wallet{
@@ -171,27 +172,45 @@ func CreateWalletPaystack(c types.CreateCustomerRequest) (*types.Wallet, error) 
 	return &wPayStack, nil
 }
 
-func (w walletService) GetWallet(ctx context.Context, id string) (*types.Wallet, error) {
-	wallet, err := w.repository.GetWallet(ctx, id)
+func (w walletService) GetFiatWallet(ctx context.Context, id string) (*types.Wallet, error) {
+	wallet, err := w.repository.GetFiatWallet(ctx, id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, errors.Wrap(errors.TypeNotFound, "wallet not found", err)
 		}
-		return nil, errors.Wrap(errors.TypeInternal, "failed to retrieve wallet", err)
+		return nil, err
 	}
 
 	return wallet, nil
 }
 
-func (w walletService) CreateWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error) {
-
-	wt.ID = uuid.New().String()
-	wt.UserId = "a1b2c3d4-e5f6-4789-90ab-cdef01234567"
-
-	wallet, err := w.repository.CreateWallet(ctx, wt)
+func (w walletService) GetAllWallets(ctx context.Context, id string) ([]*types.Wallet, error) {
+	wallets, err := w.repository.GetAllWallets(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(errors.TypeInternal, "Unable to create wallet", err)
+		if err == pgx.ErrNoRows {
+			return nil, errors.Wrap(errors.TypeNotFound, "wallet not found", err)
+		}
+		return nil, err
 	}
 
+	return wallets, nil
+}
+
+func (w walletService) CreateFiatWallet(ctx context.Context, wt types.Wallet) (*types.Wallet, error) {
+	wt.UserId = "a1b2c3d4-e5f6-4789-90ab-cdef01234567"
+	wallet, err := w.repository.CreateFiatWallet(ctx, wt)
+	if err != nil {
+		return nil, err
+	}
 	return wallet, nil
+}
+
+func (w walletService) CreateCryptoWallet(ctx context.Context, wt types.Wallet) error {
+	wt.ID = uuid.New().String()
+	wt.WalletType = "CRYPTO"
+	err := w.repository.CreateCryptoWallet(ctx, wt)
+	if err != nil {
+		return err
+	}
+	return nil
 }
