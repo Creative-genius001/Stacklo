@@ -15,6 +15,7 @@ type PaymentService interface {
 	Transfer(payload paystack.FianlTransferRequest) (*paystack.FinalTransferResponse, error)
 	Ping() error
 	PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error)
+	Convert(creq binance.ConvertAssetRequest) ([]*binance.ConvertAssetResponse, error)
 }
 
 type paymentServiceImpl struct {
@@ -77,4 +78,12 @@ func (p *paymentServiceImpl) Ping() error {
 
 func (p *paymentServiceImpl) PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error) {
 	panic("unimplemented")
+}
+
+func (p *paymentServiceImpl) Convert(creq binance.ConvertAssetRequest) ([]*binance.ConvertAssetResponse, error) {
+	res, err := p.binanceClient.Convert(creq)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
@@ -262,4 +263,39 @@ func (s *PaymentService) Ping(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "type": "ping"})
+}
+
+func (s *PaymentService) Convert(c *gin.Context) {
+	var data binance.ConvertAssetRequest
+	if err := c.BindJSON(&data); err != nil {
+		logger.Logger.Error("Invalid input data", zap.Error(err))
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
+		return
+	}
+
+	resp, err := s.payment.Convert(data)
+
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			logger.Logger.Error("Unexpected error from BINANCE WRAPPER")
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+		switch appErr.Type {
+		case errors.TypeInternal:
+			logger.Logger.Error("Unexpected error fuck", zap.Error(appErr))
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		case errors.TypeExternal:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeExternal})
+			return
+		default:
+			logger.Logger.Error("Unexpected error fuck")
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }

@@ -24,3 +24,17 @@ type BinanceOrderResponse struct {
 	CummulativeQuoteQty float64 `json:"cummulativeQuoteQty"` // Total NGN spent
 	ClientOrderID       string  `json:"clientOrderId"`
 }
+
+type ConvertAssetRequest struct {
+	FromAsset string `json:"fromAsset"`
+	ToAsset   string `json:"toAsset"`
+}
+
+type ConvertAssetResponse struct {
+	FromAsset          string `json:"fromAsset"`
+	ToAsset            string `json:"toAsset"`
+	FromAssetMinAmount string `json:"fromAssetMinAmount"`
+	FromAssetMaxAmount string `json:"fromAssetMaxAmount"`
+	ToAssetMinAmount   string `json:"toAssetMinAmount"`
+	ToAssetMaxAmount   string `json:"toAssetMaxAmount"`
+}

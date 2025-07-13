@@ -6,19 +6,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
 	"net/http"
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
-	"github.com/Creative-genius001/Stacklo/services/payment/utils/logger"
-	"go.uber.org/zap"
-	//"github.com/adshao/go-binance/v2"
+	// "github.com/Creative-genius001/Stacklo/services/payment/utils/logger"
+	// "go.uber.org/zap"
 )
 
 type Binance interface {
 	PlaceBuyOrder(ctx context.Context, req BinanceOrderRequest) (*BinanceOrderResponse, error)
 	Ping() error
+	Convert(creq ConvertAssetRequest) ([]*ConvertAssetResponse, error)
 }
 
 type binanceClient struct {
@@ -64,10 +65,9 @@ func (b *binanceClient) BinanceAPIClient(method, url string, body any, signed bo
 	} else {
 		bodyReader = nil
 	}
-
 	req, err := http.NewRequest(method, urlPath, bodyReader)
 	if err != nil {
-		logger.Logger.Error("Failed to connect to BINANCE API", zap.Error(err))
+		// logger.Logger.Error("Failed to connect to BINANCE API", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to BINANCE API", err)
 	}
 
@@ -76,12 +76,16 @@ func (b *binanceClient) BinanceAPIClient(method, url string, body any, signed bo
 		req.Header.Set("X-MBX-APIKEY", b.apiKey)
 	}
 
+	// logger.Logger.Debug("API CALL DEBUG", zap.String("path", req.URL.Path), zap.String("method", req.Method))
+
 	resp, err := b.client.Do(req)
 	if err != nil {
-		logger.Logger.Error("Failed to get data", zap.Error(err))
+		// logger.Logger.Error("Failed to get data", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeExternal, "Failed to get BINANCE API data", err)
 	}
 	defer resp.Body.Close()
+
+	// logger.Logger.Info("Binance response body", zap.ByteString("body", respBody))
 
 	return io.ReadAll(resp.Body)
 }

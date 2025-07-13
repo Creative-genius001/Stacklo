@@ -58,6 +58,7 @@ func (p *paystackClient) PaystackAPIWrapper(method string, url string, addHeader
 		req.Header.Set(k, v)
 	}
 
+	logger.Logger.Debug("API CALL DEBUG", zap.String("path", req.URL.Path), zap.String("method", req.Method))
 	var resp *http.Response
 	resp, err = p.httpClient.Do(req)
 	if err != nil {

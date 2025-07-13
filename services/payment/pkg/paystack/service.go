@@ -2,7 +2,6 @@ package paystack
 
 import (
 	"encoding/json"
-	er "errors"
 	"net/http"
 
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
@@ -14,13 +13,7 @@ func (p *paystackClient) GetBankList() (*Banks, error) {
 
 	resp, err := p.PaystackAPIWrapper(http.MethodGet, string(UBankList), nil, nil)
 	if err != nil {
-		var appErr *errors.CustomError
-		if !er.As(err, &appErr) {
-			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
-		}
-
-		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
-		return nil, appErr
+		return nil, err
 	}
 
 	var result Banks
@@ -38,13 +31,7 @@ func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode str
 
 	resp, err := p.PaystackAPIWrapper(http.MethodGet, url, nil, nil)
 	if err != nil {
-		var appErr *errors.CustomError
-		if !er.As(err, &appErr) {
-			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
-		}
-
-		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
-		return nil, appErr
+		return nil, err
 	}
 
 	var result AccountResolutionResponse
@@ -66,13 +53,7 @@ func (p *paystackClient) CreateTransferRecipient(payload *CreateTransferRecipien
 
 	resp, err := p.PaystackAPIWrapper(http.MethodPost, string(UCreateTrfRecpt), nil, bytes)
 	if err != nil {
-		var appErr *errors.CustomError
-		if !er.As(err, &appErr) {
-			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
-		}
-
-		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
-		return nil, appErr
+		return nil, err
 	}
 
 	var result CreateTransferRecipientResponse
@@ -94,13 +75,7 @@ func (p *paystackClient) GetOTP(payload *TransferOtpRequest) (*TransferOtpRespon
 
 	resp, err := p.PaystackAPIWrapper(http.MethodPost, string(UTransfer), nil, bytes)
 	if err != nil {
-		var appErr *errors.CustomError
-		if !er.As(err, &appErr) {
-			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
-		}
-
-		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
-		return nil, appErr
+		return nil, err
 	}
 
 	var result TransferOtpResponse
@@ -122,13 +97,7 @@ func (p *paystackClient) Transfer(payload FianlTransferRequest) (*FinalTransferR
 
 	resp, err := p.PaystackAPIWrapper(http.MethodPost, string(UFTransfer), nil, bytes)
 	if err != nil {
-		var appErr *errors.CustomError
-		if !er.As(err, &appErr) {
-			return nil, errors.Wrap(errors.TypeExternal, "External API error", err)
-		}
-
-		logger.Logger.Error("It aserted at the service level", zap.String("messg", appErr.Message), zap.String("type", string(appErr.Type)), zap.Error(appErr.Err))
-		return nil, appErr
+		return nil, err
 	}
 
 	var result FinalTransferResponse
