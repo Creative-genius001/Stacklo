@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
-	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+	"github.com/Creative-genius001/Stacklo/services/wallet/model"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -84,7 +85,7 @@ func (h *Handler) GetFiatWallet(c *gin.Context) {
 
 func (h *Handler) CreateFiatWallet(c *gin.Context) {
 
-	var customerReq types.CreateCustomerRequest
+	var customerReq paystack.CreateCustomerRequest
 
 	if err := c.ShouldBindJSON(&customerReq); err != nil {
 		logger.Logger.Warn("Invalid input data")
@@ -92,7 +93,7 @@ func (h *Handler) CreateFiatWallet(c *gin.Context) {
 		return
 	}
 
-	wallet, err := services.CreateWalletPaystack(customerReq)
+	wallet, err := h.service.CreateWalletPaystack(customerReq)
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {
@@ -141,7 +142,7 @@ func (h *Handler) CreateFiatWallet(c *gin.Context) {
 }
 
 func (h *Handler) CreateCryptoWallet(c *gin.Context) {
-	var wallet types.Wallet
+	var wallet model.Wallet
 
 	if err := c.ShouldBindJSON(&wallet); err != nil {
 		logger.Logger.Warn("Invalid input data")

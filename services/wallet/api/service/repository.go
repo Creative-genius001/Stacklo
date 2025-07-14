@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Creative-genius001/Stacklo/services/wallet/types"
+	"github.com/Creative-genius001/Stacklo/services/wallet/model"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/jackc/pgx/v5"
@@ -14,10 +14,10 @@ import (
 )
 
 type Repository interface {
-	GetFiatWallet(ctx context.Context, id string) (*types.Wallet, error)
-	GetAllWallets(ctx context.Context, id string) ([]*types.Wallet, error)
-	CreateFiatWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error)
-	CreateCryptoWallet(ctx context.Context, w types.Wallet) error
+	GetFiatWallet(ctx context.Context, id string) (*model.Wallet, error)
+	GetAllWallets(ctx context.Context, id string) ([]*model.Wallet, error)
+	CreateFiatWallet(ctx context.Context, w model.Wallet) (*model.Wallet, error)
+	CreateCryptoWallet(ctx context.Context, w model.Wallet) error
 	Deposit(ctx context.Context, amount string) error
 	Withdraw(ctx context.Context, amount string) error
 	Close()
@@ -42,29 +42,35 @@ func (r *postgresRepository) Close() {
 	r.db.Close(context.Background())
 }
 
-func (r *postgresRepository) GetFiatWallet(ctx context.Context, id string) (*types.Wallet, error) {
+func (r *postgresRepository) GetFiatWallet(ctx context.Context, id string) (*model.Wallet, error) {
 
 	currency := "NGN" //can only support NGN for now
-	var w types.Wallet
+	var w model.Wallet
 	query := `SELECT
-			id,
-			user_id,
-			currency,
-			balance,
-			wallet_type,
-			virtual_account_name,
-			virtual_account_number,
-			virtual_bank_name,
-			active,
-			created_at,
-			updated_at
-			FROM wallets
-			LEFT JOIN fiat_wallet_metadata f WHERE id = f.wallet_id 
-			WHERE user_id = $1 AND currency = $2 AND virtual_account_number IS NOT NULL
+				w.*,
+				f.virtual_account_name,
+				f.virtual_account_number,
+				f.virtual_bank_name
+			FROM wallets w
+			LEFT JOIN fiat_wallet_metadata f ON w.id = f.wallet_id
+			WHERE w.user_id = $1
+			AND w.currency = $2
 			LIMIT 1;
 		`
 	row := r.db.QueryRow(ctx, query, id, currency)
-	err := row.Scan(&w.ID, &w.UserId, &w.Currency, &w.Balance, &w.WalletType, &w.VirtualAccountName, &w.VirtualAccountNumber, &w.VirtualBankName, &w.Active, &w.CreatedAt, &w.UpdatedAt)
+	err := row.Scan(
+		&w.ID,
+		&w.UserId,
+		&w.Currency,
+		&w.Balance,
+		&w.WalletType,
+		&w.Active,
+		&w.CreatedAt,
+		&w.UpdatedAt,
+		&w.VirtualAccountName,
+		&w.VirtualAccountNumber,
+		&w.VirtualBankName,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			logger.Logger.Error("Wallet not found", zap.Error(err), zap.String("wallet-id", id))
@@ -76,22 +82,15 @@ func (r *postgresRepository) GetFiatWallet(ctx context.Context, id string) (*typ
 	return &w, nil
 }
 
-func (r *postgresRepository) GetAllWallets(ctx context.Context, id string) ([]*types.Wallet, error) {
+func (r *postgresRepository) GetAllWallets(ctx context.Context, id string) ([]*model.Wallet, error) {
 	query := `SELECT
-			id,
-			user_id,
-			currency,
-			balance,
-			wallet_type,
-			virtual_account_name,
-			virtual_account_number,
-			virtual_bank_name,
-			active,
-			created_at,
-			updated_at
-			FROM wallets
-			FULL JOIN fiat_wallet_metadata f WHERE id = f.wallet_id 
-			WHERE user_id = $1 
+			w.*,
+			f.virtual_account_name,
+			f.virtual_account_number,
+			f.virtual_bank_name
+			FROM wallets w
+			LEFT JOIN fiat_wallet_metadata f ON w.id = f.wallet_id 
+			WHERE user_id = $1
 			LIMIT 1;
 		`
 	rows, err := r.db.Query(ctx, query, id)
@@ -100,38 +99,33 @@ func (r *postgresRepository) GetAllWallets(ctx context.Context, id string) ([]*t
 		return nil, errors.Wrap(errors.TypeInternal, "database query error", err)
 	}
 	defer rows.Close()
-	var wallets []types.Wallet
+	var wallets []*model.Wallet
 	for rows.Next() {
-		var w types.Wallet
+		var w model.Wallet
 		err := rows.Scan(
 			&w.ID,
 			&w.UserId,
 			&w.Currency,
 			&w.Balance,
 			&w.WalletType,
-			&w.VirtualAccountName,
-			&w.VirtualAccountNumber,
-			&w.VirtualBankName,
 			&w.Active,
 			&w.CreatedAt,
 			&w.UpdatedAt,
+			&w.VirtualAccountName,
+			&w.VirtualAccountNumber,
+			&w.VirtualBankName,
 		)
 		if err != nil {
 			logger.Logger.Error("Database query failed", zap.Error(err), zap.String("wallet-id", id))
 			return nil, errors.Wrap(errors.TypeInternal, "failed to retireve wallet", err)
 		}
-		wallets = append(wallets, w)
+		wallets = append(wallets, &w)
 	}
 
-	wt := make([]*types.Wallet, len(wallets))
-	for i := range wallets {
-		wt[i] = &wallets[i]
-	}
-
-	return wt, nil
+	return wallets, nil
 }
 
-func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w types.Wallet) (*types.Wallet, error) {
+func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w model.Wallet) (*model.Wallet, error) {
 
 	var exists bool
 	query := `SELECT EXISTS (
@@ -149,13 +143,13 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w types.Walle
 		msg := fmt.Sprintf("Wallet for user %s with currency %s already exists", w.UserId, w.Currency)
 		return nil, errors.Wrap(errors.TypeConflict, "Cannot create duplicate wallet", er.New(msg))
 	} else {
-		var newWallet types.Wallet
+		var newWallet model.Wallet
 		query1 := `
 		INSERT INTO wallets (
 			user_id, currency, balance, active, wallet_type, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, NOW(),NOW()) 
-		RETURNING id, user_id, currency, balance,active, wallet_type, created_at, updated_at
+		RETURNING id
 	`
 		query2 := `
 		INSERT INTO fiat_wallet_metadata (
@@ -190,13 +184,6 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w types.Walle
 			w.WalletType,
 		).Scan(
 			&newWallet.ID,
-			&newWallet.UserId,
-			&newWallet.Currency,
-			&newWallet.Balance,
-			&newWallet.Active,
-			&newWallet.WalletType,
-			&newWallet.CreatedAt,
-			&newWallet.UpdatedAt,
 		)
 
 		if err != nil {
@@ -204,17 +191,13 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w types.Walle
 			return nil, errors.Wrap(errors.TypeInternal, "Error creating wallet", err)
 		}
 
-		err = tx.QueryRow(
+		_, err = tx.Exec(
 			ctx,
 			query2,
 			newWallet.ID,
 			w.VirtualAccountName,
 			w.VirtualAccountNumber,
 			w.VirtualBankName,
-		).Scan(
-			&newWallet.VirtualAccountName,
-			&newWallet.VirtualAccountNumber,
-			&newWallet.VirtualBankName,
 		)
 
 		if err != nil {
@@ -227,11 +210,22 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w types.Walle
 			return nil, errors.Wrap(errors.TypeInternal, "commit transaction error", err)
 		}
 
+		newWallet = model.Wallet{
+			ID:                   newWallet.ID,
+			UserId:               w.UserId,
+			Balance:              w.Balance,
+			Active:               w.Active,
+			WalletType:           w.WalletType,
+			Currency:             w.Currency,
+			VirtualAccountName:   w.VirtualAccountName,
+			VirtualAccountNumber: w.VirtualAccountNumber,
+			VirtualBankName:      w.VirtualBankName,
+		}
 		return &newWallet, nil
 	}
 }
 
-func (r *postgresRepository) CreateCryptoWallet(ctx context.Context, w types.Wallet) error {
+func (r *postgresRepository) CreateCryptoWallet(ctx context.Context, w model.Wallet) error {
 	query := `
 		INSERT INTO wallets (
 			id, user_id, currency, balance, active, wallet_type, created_at, updated_at
@@ -241,13 +235,12 @@ func (r *postgresRepository) CreateCryptoWallet(ctx context.Context, w types.Wal
 	`
 	_, err := r.db.Exec(ctx,
 		query,
+		w.ID,
 		w.UserId,
 		w.Currency,
 		w.Balance,
 		w.Active,
 		w.WalletType,
-		w.CreatedAt,
-		w.UpdatedAt,
 	)
 
 	if err != nil {

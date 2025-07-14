@@ -6,10 +6,12 @@ services:
       context: ./services/wallet
       dockerfile: db.Dockerfile
     restart: on-failure
+    env_file:
+      - ./services/wallet/.env
     environment:
-      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_USER: ${WALLET_DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${WALLET_DB_NAME}
     ports:
       - "4200:5432"
     volumes:
@@ -21,10 +23,12 @@ services:
       context: ./services/transaction
       dockerfile: db.Dockerfile
     restart: on-failure
+    env_file:
+      - ./services/transaction/.env
     environment:
-      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_USER: ${TRANSACTION_DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${TRANSACTION_DB_NAME}
     ports:
       - "4202:5432"
     volumes:

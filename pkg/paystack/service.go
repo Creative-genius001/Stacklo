@@ -109,3 +109,45 @@ func (p *paystackClient) Transfer(payload FianlTransferRequest) (*FinalTransferR
 
 	return &result, nil
 }
+
+func (p *paystackClient) CreateCustomer(payload CreateCustomerRequest) (*CreateCustomerResponse, error) {
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := p.PaystackAPIWrapper(http.MethodPost, string(UTransfer), nil, bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var result CreateCustomerResponse
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
+
+	return &result, nil
+}
+
+func (p *paystackClient) CreateDVAWallet(payload *CreateDVAWalletRequest) (*CreateDVAWalletResponse, error) {
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := p.PaystackAPIWrapper(http.MethodPost, string(UTransfer), nil, bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var result CreateDVAWalletResponse
+	err = json.Unmarshal(resp, &result)
+	if err != nil {
+		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
+	}
+
+	return &result, nil
+}

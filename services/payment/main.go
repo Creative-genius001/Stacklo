@@ -6,13 +6,13 @@ import (
 	"time"
 
 	//natsclient "github.com/Creative-genius001/Stacklo/pkg/natsClient"
+	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/handlers"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	"github.com/Creative-genius001/Stacklo/services/payment/middlewares"
 	bn "github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
-	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 
 	// "github.com/adshao/go-binance/v2"
@@ -36,6 +36,8 @@ func main() {
 	if appEnv == "" {
 		appEnv = "development"
 	}
+	payApi := os.Getenv("PAYSTACK_TEST_KEY")
+	payUrl := os.Getenv("PAYSTACK_BASE_URL")
 
 	logger.InitLogger(appEnv)
 	defer logger.Logger.Sync()
@@ -77,7 +79,7 @@ func main() {
 
 	// bCli := binance.NewClient(c.BinanceAPIKey, c.BinanceSecretKey)
 	binanceCli := bn.NewBinanceClient(c)
-	paystackCli := paystack.NewPaystackClient(c.PaystackTestKey, c.PaystackBaseUrl)
+	paystackCli := paystack.NewPaystackClient(payApi, payUrl)
 
 	paymentSvc := services.NewPaymentService(binanceCli, paystackCli)
 	paymentHdlr := handlers.NewpaymentService(paymentSvc)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/handler"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/service"
@@ -21,6 +22,7 @@ import (
 
 func main() {
 	config.Init()
+	c := config.Cfg
 
 	if err := godotenv.Load("../../.env"); err != nil {
 		logger.Logger.Fatal(".env file not found", zap.Error(err))
@@ -31,6 +33,9 @@ func main() {
 		appEnv = "development"
 	}
 
+	payApi := os.Getenv("PAYSTACK_TEST_KEY")
+	payUrl := os.Getenv("PAYSTACK_BASE_URL")
+
 	logger.InitLogger(appEnv)
 	defer logger.Logger.Sync()
 
@@ -38,9 +43,9 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	PORT := config.Cfg.Port
+	PORT := c.Port
 
-	expectedHost := "localhost:" + config.Cfg.Port
+	expectedHost := "localhost:" + c.Port
 
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -68,15 +73,15 @@ func main() {
 
 	var re service.Repository
 	retry.ForeverSleep(2*time.Second, func(_ int) (err error) {
-		re, err = service.NewPostgresRepository(config.Cfg.DBUrl)
+		re, err = service.NewPostgresRepository(c.DBUrl)
 		if err != nil {
 			logger.Logger.Fatal("Failed to connect to database", zap.Error(err))
 		}
 		return
 	})
 	defer re.Close()
-
-	svc := service.NewService(re)
+	ps := paystack.NewPaystackClient(payApi, payUrl)
+	svc := service.NewService(re, ps)
 	h := handler.NewHandler(svc)
 
 	r.NoRoute(func(c *gin.Context) {
