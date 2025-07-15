@@ -106,7 +106,6 @@ func (w walletService) CreateFiatWallet(ctx context.Context, wt model.Wallet) (*
 }
 
 func (w walletService) CreateCryptoWallet(ctx context.Context, wt model.Wallet) error {
-	wt.ID = uuid.New().String()
 	wt.WalletType = "CRYPTO"
 	err := w.repository.CreateCryptoWallet(ctx, wt)
 	if err != nil {

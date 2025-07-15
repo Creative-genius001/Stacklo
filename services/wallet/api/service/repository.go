@@ -90,8 +90,7 @@ func (r *postgresRepository) GetAllWallets(ctx context.Context, id string) ([]*m
 			f.virtual_bank_name
 			FROM wallets w
 			LEFT JOIN fiat_wallet_metadata f ON w.id = f.wallet_id 
-			WHERE user_id = $1
-			LIMIT 1;
+			WHERE user_id = $1;
 		`
 	rows, err := r.db.Query(ctx, query, id)
 	if err != nil {
@@ -160,18 +159,18 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w model.Walle
 	`
 		tx, err := r.db.Begin(ctx)
 		if err != nil {
-			logger.Logger.Error("Error starting transaction", zap.Error(err))
-			return nil, errors.Wrap(errors.TypeInternal, "Error starting transaction", err)
+			logger.Logger.Error("Error starting db transaction", zap.Error(err))
+			return nil, errors.Wrap(errors.TypeInternal, "Error starting db transaction", err)
 		}
 
 		defer func() {
 			if r := recover(); r != nil {
 				tx.Rollback(ctx)
-				logger.Logger.Error("Panic recovered during fiat wallet creation, transaction rolled back", zap.Any("panic_value", r))
+				logger.Logger.Error("Panic recovered during fiat wallet creation, db transaction rolled back", zap.Any("panic_value", r))
 				panic(r)
 			} else if err != nil {
 				tx.Rollback(ctx)
-				logger.Logger.Error("Error occurred during fiat wallet creation, transaction rolled back", zap.Error(err))
+				logger.Logger.Error("Error occurred during fiat wallet creation, db transaction rolled back", zap.Error(err))
 			}
 		}()
 
@@ -228,14 +227,13 @@ func (r *postgresRepository) CreateFiatWallet(ctx context.Context, w model.Walle
 func (r *postgresRepository) CreateCryptoWallet(ctx context.Context, w model.Wallet) error {
 	query := `
 		INSERT INTO wallets (
-			id, user_id, currency, balance, active, wallet_type, created_at, updated_at
+			user_id, currency, balance, active, wallet_type, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, NOW(), NOW()
+			$1, $2, $3, $4, $5, NOW(), NOW()
 		)
 	`
 	_, err := r.db.Exec(ctx,
 		query,
-		w.ID,
 		w.UserId,
 		w.Currency,
 		w.Balance,

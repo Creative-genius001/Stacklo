@@ -21,11 +21,10 @@ CREATE TABLE IF NOT EXISTS transactions  (
 CREATE TABLE IF NOT EXISTS fiat_transaction (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     reference_id VARCHAR(255) NOT NULL UNIQUE,
+    transaction_number VARCHAR(255) NOT NULL,
     bank_name VARCHAR(255),
     account_name VARCHAR(255),
     account_number VARCHAR(50),
-    sender_name VARCHAR(255),   
-    recipient_name VARCHAR(255),
     fee DECIMAL(18, 8),         
     net_amount DECIMAL(18, 8)
 );
@@ -34,9 +33,6 @@ CREATE TABLE IF NOT EXISTS fiat_transaction (
 CREATE TABLE IF NOT EXISTS crypto_transaction (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     exchange_order_id VARCHAR(255),
-    blockchain_transaction_hash VARCHAR(255) UNIQUE,
-    sender_address VARCHAR(255),  
-    receiver_address VARCHAR(255),
     network VARCHAR(50),       
     network_fee DECIMAL(18, 8),          
     price_at_transaction DECIMAL(18, 8),

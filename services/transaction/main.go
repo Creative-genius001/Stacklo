@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/Creative-genius001/Stacklo/services/wallet/api/handler"
-	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
-	"github.com/Creative-genius001/Stacklo/services/wallet/api/service"
-	"github.com/Creative-genius001/Stacklo/services/wallet/config"
-	"github.com/Creative-genius001/Stacklo/services/wallet/middlewares"
-	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
+	"github.com/Creative-genius001/Stacklo/services/transaction/api/handler"
+	"github.com/Creative-genius001/Stacklo/services/transaction/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/transaction/api/service"
+	"github.com/Creative-genius001/Stacklo/services/transaction/config"
+	"github.com/Creative-genius001/Stacklo/services/transaction/middlewares"
+	"github.com/Creative-genius001/Stacklo/services/transaction/utils/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,6 +20,7 @@ import (
 
 func main() {
 	config.Init()
+	c := config.Cfg
 
 	if err := godotenv.Load("../../.env"); err != nil {
 		logger.Logger.Fatal(".env file not found", zap.Error(err))
@@ -37,9 +38,9 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	PORT := config.Cfg.Port
+	PORT := c.Port
 
-	expectedHost := "localhost:" + config.Cfg.Port
+	expectedHost := "localhost:" + c.Port
 
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -67,7 +68,7 @@ func main() {
 
 	var re service.Repository
 	retry.ForeverSleep(2*time.Second, func(_ int) (err error) {
-		re, err = service.NewPostgresRepository(config.Cfg.DBUrl)
+		re, err = service.NewPostgresRepository(c.DBUrl)
 		if err != nil {
 			logger.Logger.Fatal("Failed to connect to database", zap.Error(err))
 		}
