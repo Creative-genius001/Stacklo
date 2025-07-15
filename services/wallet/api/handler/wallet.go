@@ -7,6 +7,7 @@ import (
 	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/model"
+	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,12 @@ func (h *Handler) GetAllWallets(c *gin.Context) {
 	walletIDStr := strings.TrimSpace(c.Param("id"))
 	if walletIDStr == "" {
 		logger.Logger.Warn("Wallet ID is an empty string")
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
+		return
+	}
+	isValid := utils.IsValidUUID(walletIDStr)
+	if isValid == false {
+		logger.Logger.Warn("Wallet ID is not a valid ID")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
@@ -57,6 +64,12 @@ func (h *Handler) GetFiatWallet(c *gin.Context) {
 	walletIDStr := strings.TrimSpace(c.Param("id"))
 	if walletIDStr == "" {
 		logger.Logger.Warn("Wallet ID is an empty string")
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
+		return
+	}
+	isValid := utils.IsValidUUID(walletIDStr)
+	if isValid == false {
+		logger.Logger.Warn("Wallet ID is not a valid ID")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}

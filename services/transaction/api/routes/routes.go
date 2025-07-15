@@ -7,11 +7,12 @@ import (
 
 func InitializeRoutes(router *gin.Engine, h *handler.Handler) {
 
-	// walletRouter := router.Group("/api/wallet")
-	// {
-	// 	walletRouter.GET("/:id", h.GetWallet)
-	// 	walletRouter.POST("/create", h.CreateWallet)
+	transactionR := router.Group("/api/transaction")
+	{
+		transactionR.POST("/create", h.CreateTransaction)
+		transactionR.GET("/", h.GetAllTransactions)
+		transactionR.GET("/:id", h.GetSingleTransaction)
 
-	// }
+	}
 
 }

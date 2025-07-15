@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS transactions  (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS fiat_transaction (
+CREATE TABLE IF NOT EXISTS fiat_transactions (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     reference_id VARCHAR(255) NOT NULL UNIQUE,
     transaction_number VARCHAR(255) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS fiat_transaction (
 );
 
 
-CREATE TABLE IF NOT EXISTS crypto_transaction (
+CREATE TABLE IF NOT EXISTS crypto_transactions (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     exchange_order_id VARCHAR(255),
     network VARCHAR(50),       
@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS crypto_transaction (
     quote_currency_amount DECIMAL(18, 8) 
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_crypto_transaction_blockchain_hash ON crypto_transaction (blockchain_transaction_hash);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions(wallet_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_transactions_currency ON transactions(currency, created_at DESC);

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   wallet-db:
     container_name: wallet_db
@@ -10,7 +9,7 @@ services:
       - ./services/wallet/.env
     environment:
       POSTGRES_USER: ${WALLET_DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${WALLET_DB_PASSWORD}
       POSTGRES_DB: ${WALLET_DB_NAME}
     ports:
       - "4200:5432"
@@ -27,7 +26,7 @@ services:
       - ./services/transaction/.env
     environment:
       POSTGRES_USER: ${TRANSACTION_DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${TRANSACTION_DB_PASSWORD}
       POSTGRES_DB: ${TRANSACTION_DB_NAME}
     ports:
       - "4202:5432"

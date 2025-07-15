@@ -43,7 +43,7 @@ func (r *postgresRepository) Close() {
 func (r *postgresRepository) GetAllTransactions(ctx context.Context, userID string) ([]*model.Transaction, error) {
 	query := `
 		SELECT 
-		t.*,
+		t.*
         FROM transactions t 
 		WHERE t.user_id = $1
 		ORDER BY t.created_at DESC
@@ -62,15 +62,16 @@ func (r *postgresRepository) GetAllTransactions(ctx context.Context, userID stri
 			&t.UserId,
 			&t.WalletId,
 			&t.Currency,
-			&t.Status,
+			&t.Amount,
 			&t.Reason,
-			&t.TransactionType,
 			&t.EntryType,
+			&t.Status,
+			&t.TransactionType,
 			&t.CreatedAt,
 			&t.UpdatedAt,
 		)
 		if err != nil {
-			logger.Logger.Error("COuld not scan rows", zap.Error(err), zap.String("user-id", userID))
+			logger.Logger.Error("Could not scan rows", zap.Error(err), zap.String("user-id", userID))
 			return nil, errors.Wrap(errors.TypeInternal, "failed to retireve all transactions", err)
 		}
 		transactions = append(transactions, &t)
@@ -83,15 +84,15 @@ func (r *postgresRepository) CreateTransaction(ctx context.Context, t model.Tran
 
 	query := `
 		INSERT INTO transactions (
-			user_id, wallet_id, currency, status, reason, transaction_type, entry_type, created_at, updated_at
+			user_id, wallet_id, currency, amount, status, reason, transaction_type, entry_type, created_at, updated_at
 		)
 		VALUES (
-			$1,$2,$3,$4,$5,$6,$7, NOW(),NOW()
+			$1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW()
 		)
 		RETURNING id;
 	`
 	fQuery := `
-		INSERT INTO fiat_transactions (
+		INSERT INTO fiat_transaction (
 			id, reference_id, transaction_number, bank_name, account_name, account_number, fee, net_amount
 		)
 		VALUES (
@@ -99,11 +100,11 @@ func (r *postgresRepository) CreateTransaction(ctx context.Context, t model.Tran
 		)
 	`
 	cQuery := `
-		INSERT INTO crypto_transactions (
+		INSERT INTO crypto_transaction (
 			id, exchange_order_id, network, network_fee, price_at_transaction, quote_currency_amount
 		)
 		VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,$9
+			$1,$2,$3,$4,$5,$6
 		)
 	`
 
@@ -116,11 +117,11 @@ func (r *postgresRepository) CreateTransaction(ctx context.Context, t model.Tran
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback(ctx)
-			logger.Logger.Error("Panic recovered during fiat wallet creation, transaction rolled back", zap.Any("panic_value", r))
+			logger.Logger.Error("Panic recovered during fiat transaction creation, transaction rolled back", zap.Any("panic_value", r))
 			panic(r)
 		} else if err != nil {
 			tx.Rollback(ctx)
-			logger.Logger.Error("Error occurred during fiat wallet creation, transaction rolled back", zap.Error(err))
+			logger.Logger.Error("Error occurred during fiat transaction creation, transaction rolled back", zap.Error(err))
 		}
 	}()
 
@@ -132,10 +133,10 @@ func (r *postgresRepository) CreateTransaction(ctx context.Context, t model.Tran
 		t.WalletId,
 		t.Currency,
 		t.Amount,
-		t.Reason,
-		t.EntryType,
 		t.Status,
+		t.Reason,
 		t.TransactionType,
+		t.EntryType,
 	).Scan(&transactionID)
 	if err != nil {
 		logger.Logger.Error("Failed to insert transaction in table", zap.Error(err))
@@ -202,8 +203,8 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 		c.price_at_transaction,
 		c.quote_currency_amount
         FROM transactions t 
-		LEFT JOIN fiat_transaction f ON f.id = t.id
-		LEFT JOIN crypto_transaction c ON c.id = t.id
+		LEFT JOIN fiat_transaction f ON f.id = t.id AND t.transaction_type = 'FIAT'
+		LEFT JOIN crypto_transaction c ON c.id = t.id AND t.transaction_type = 'CRYPTO'
 		WHERE t.id = $1
 		LIMIT 1;
 	`
@@ -223,31 +224,37 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 			&t.UserId,
 			&t.WalletId,
 			&t.Currency,
-			&t.Status,
+			&t.Amount,
 			&t.Reason,
-			&t.TransactionType,
 			&t.EntryType,
+			&t.Status,
+			&t.TransactionType,
 			&t.CreatedAt,
 			&t.UpdatedAt,
-			&f.ID,
 			&f.ReferenceID,
+			&f.TransactionNumber,
 			&f.BankName,
 			&f.AccountName,
 			&f.AccountNumber,
 			&f.Fee,
 			&f.NetAmount,
-			&c.ID,
 			&c.ExchangeOrderID,
 			&c.Network,
+			&c.NetworkFee,
 			&c.PriceAtTransaction,
 			&c.QuoteCurrencyAmount,
 		)
 		if err != nil {
-			logger.Logger.Error("COuld not scan rows", zap.Error(err), zap.String("transaction-id", transactionID))
+			logger.Logger.Error("Could not scan rows", zap.Error(err), zap.String("transaction-id", transactionID))
 			return nil, errors.Wrap(errors.TypeInternal, "failed to retireve transactions", err)
 		}
-		t.FiatDetails = &f
-		t.CryptoDetails = &c
+		if f.ReferenceID != nil {
+			t.FiatDetails = &f
+		}
+
+		if c.ExchangeOrderID != nil {
+			t.CryptoDetails = &c
+		}
 	}
 
 	return &t, nil
