@@ -103,7 +103,7 @@ func (s *Handler) CreateTransaction(c *gin.Context) {
 
 func (h *Handler) GetFilteredTransactions(c *gin.Context) {
 	userID := c.Param("id")
-	currency := c.Query("currency")
+	transactionType := c.Query("transaction_type")
 	entryType := c.Query("entry_type")
 	status := c.Query("status")
 	limitStr := c.DefaultQuery("limit", "20")
@@ -123,12 +123,12 @@ func (h *Handler) GetFilteredTransactions(c *gin.Context) {
 	}
 
 	filter := model.TransactionFilter{
-		UserID:    userID,
-		Currency:  currency,
-		EntryType: entryType,
-		Status:    status,
-		Limit:     limit,
-		Cursor:    cursor,
+		UserID:          userID,
+		TransactionType: transactionType,
+		EntryType:       entryType,
+		Status:          status,
+		Limit:           limit,
+		Cursor:          cursor,
 	}
 
 	transactions, nextCursor, err := h.service.GetFilteredTransactions(c.Request.Context(), filter)

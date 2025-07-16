@@ -43,10 +43,10 @@ type CryptoTransaction struct {
 }
 
 type TransactionFilter struct {
-	UserID    string
-	Currency  string
-	EntryType string
-	Status    string
-	Limit     int
-	Cursor    *time.Time
+	UserID          string
+	TransactionType string
+	EntryType       string
+	Status          string
+	Limit           int
+	Cursor          *time.Time
 }

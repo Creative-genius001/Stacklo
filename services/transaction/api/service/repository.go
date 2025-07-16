@@ -275,9 +275,9 @@ func (r *postgresRepository) GetFilteredTransactions(ctx context.Context, f mode
 	args := []interface{}{f.UserID}
 	argPos := 2
 
-	if f.Currency != "" {
+	if f.TransactionType != "" {
 		query += fmt.Sprintf(" AND t.currency = $%d", argPos)
-		args = append(args, f.Currency)
+		args = append(args, f.TransactionType)
 		argPos++
 	}
 	if f.EntryType != "" {
