@@ -8,6 +8,7 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/user/api/handler"
 	"github.com/Creative-genius001/Stacklo/services/user/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/user/api/service"
+	"github.com/Creative-genius001/Stacklo/services/user/api/service/auth"
 	"github.com/Creative-genius001/Stacklo/services/user/config"
 	"github.com/Creative-genius001/Stacklo/services/user/middlewares"
 	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
@@ -76,13 +77,15 @@ func main() {
 		return
 	})
 	defer re.Close()
-	svc := service.NewService(re)
-	h := handler.NewHandler(svc)
+	svc := service.NewUserService(re)
+	auth := auth.NewAuthService(re)
+	authHandler := handler.NewAuthHandler(auth)
+	userHandler := handler.NewUserHandler(svc)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "404 not found"})
 	})
-	routes.InitializeRoutes(r, h)
+	routes.InitializeRoutes(r, authHandler, userHandler)
 
 	s := &http.Server{
 		Addr:           ":" + PORT,
