@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/transaction/model"
 	errors "github.com/Creative-genius001/Stacklo/services/transaction/utils/error"
@@ -18,6 +19,7 @@ type Repository interface {
 	GetAllTransactions(ctx context.Context, id string) ([]*model.Transaction, error)
 	CreateTransaction(ctx context.Context, w model.Transaction) error
 	GetSingleTransaction(ctx context.Context, id string) (*model.Transaction, error)
+	GetFilteredTransactions(ctx context.Context, f model.TransactionFilter) ([]model.Transaction, *string, error)
 	Close()
 }
 
@@ -262,4 +264,78 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 	}
 
 	return &t, nil
+}
+
+func (r *postgresRepository) GetFilteredTransactions(ctx context.Context, f model.TransactionFilter) ([]model.Transaction, *string, error) {
+	query := `
+		SELECT t.*
+		FROM transactions t
+		WHERE t.user_id = $1
+	`
+	args := []interface{}{f.UserID}
+	argPos := 2
+
+	if f.Currency != "" {
+		query += fmt.Sprintf(" AND t.currency = $%d", argPos)
+		args = append(args, f.Currency)
+		argPos++
+	}
+	if f.EntryType != "" {
+		query += fmt.Sprintf(" AND t.entry_type = $%d", argPos)
+		args = append(args, f.EntryType)
+		argPos++
+	}
+	if f.Status != "" {
+		query += fmt.Sprintf(" AND t.status = $%d", argPos)
+		args = append(args, f.Status)
+		argPos++
+	}
+	if f.Cursor != nil {
+		query += fmt.Sprintf(" AND t.created_at < $%d", argPos)
+		args = append(args, *f.Cursor)
+		argPos++
+	}
+
+	query += fmt.Sprintf(" ORDER BY t.created_at DESC LIMIT $%d", argPos)
+	args = append(args, f.Limit)
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var transactions []model.Transaction
+	var lastCreatedAt *time.Time
+
+	for rows.Next() {
+		var t model.Transaction
+		err := rows.Scan(
+			&t.ID,
+			&t.UserId,
+			&t.WalletId,
+			&t.Currency,
+			&t.Amount,
+			&t.Reason,
+			&t.EntryType,
+			&t.Status,
+			&t.TransactionType,
+			&t.CreatedAt,
+			&t.UpdatedAt,
+		)
+		if err != nil {
+			logger.Logger.Error("Could not scan rows", zap.Error(err), zap.String("user-id", f.UserID))
+			return nil, nil, errors.Wrap(errors.TypeInternal, "failed to retireve transactions", err)
+		}
+		transactions = append(transactions, t)
+		lastCreatedAt = &t.CreatedAt
+	}
+
+	var nextCursor *string
+	if lastCreatedAt != nil {
+		str := lastCreatedAt.Format(time.RFC3339)
+		nextCursor = &str
+	}
+
+	return transactions, nextCursor, nil
 }

@@ -10,6 +10,7 @@ type Service interface {
 	GetAllTransactions(ctx context.Context, id string) ([]*model.Transaction, error)
 	CreateTransaction(ctx context.Context, w model.Transaction) error
 	GetSingleTransaction(ctx context.Context, id string) (*model.Transaction, error)
+	GetFilteredTransactions(ctx context.Context, f model.TransactionFilter) ([]model.Transaction, *string, error)
 }
 
 type transactionService struct {
@@ -45,4 +46,13 @@ func (t *transactionService) GetSingleTransaction(ctx context.Context, transacti
 	}
 
 	return res, nil
+}
+
+func (t *transactionService) GetFilteredTransactions(ctx context.Context, f model.TransactionFilter) ([]model.Transaction, *string, error) {
+	res, cursor, err := t.repository.GetFilteredTransactions(ctx, f)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return res, cursor, nil
 }

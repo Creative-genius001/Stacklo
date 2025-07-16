@@ -41,3 +41,12 @@ type CryptoTransaction struct {
 	PriceAtTransaction  *decimal.Decimal `json:"price_at_transaction"`
 	QuoteCurrencyAmount *decimal.Decimal `json:"quote_currency_amount"`
 }
+
+type TransactionFilter struct {
+	UserID    string
+	Currency  string
+	EntryType string
+	Status    string
+	Limit     int
+	Cursor    *time.Time
+}

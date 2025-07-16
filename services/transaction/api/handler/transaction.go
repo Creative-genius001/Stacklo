@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	services "github.com/Creative-genius001/Stacklo/services/transaction/api/service"
 	"github.com/Creative-genius001/Stacklo/services/transaction/model"
@@ -96,5 +98,48 @@ func (s *Handler) CreateTransaction(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "successfully created",
+	})
+}
+
+func (h *Handler) GetFilteredTransactions(c *gin.Context) {
+	userID := c.Param("id")
+	currency := c.Query("currency")
+	entryType := c.Query("entry_type")
+	status := c.Query("status")
+	limitStr := c.DefaultQuery("limit", "20")
+	cursorStr := c.Query("cursor")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 20
+	}
+
+	var cursor *time.Time
+	if cursorStr != "" {
+		t, err := time.Parse(time.RFC3339, cursorStr)
+		if err == nil {
+			cursor = &t
+		}
+	}
+
+	filter := model.TransactionFilter{
+		UserID:    userID,
+		Currency:  currency,
+		EntryType: entryType,
+		Status:    status,
+		Limit:     limit,
+		Cursor:    cursor,
+	}
+
+	transactions, nextCursor, err := h.service.GetFilteredTransactions(c.Request.Context(), filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch transactions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":        transactions,
+		"next_cursor": nextCursor,
+		"success":     true,
 	})
 }
