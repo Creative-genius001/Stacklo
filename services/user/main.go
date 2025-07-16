@@ -2,32 +2,52 @@ package main
 
 import (
 	"net/http"
-
+	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/services/user/api/handler"
 	"github.com/Creative-genius001/Stacklo/services/user/api/routes"
+	"github.com/Creative-genius001/Stacklo/services/user/api/service"
 	"github.com/Creative-genius001/Stacklo/services/user/config"
-	"github.com/Creative-genius001/Stacklo/services/user/db"
-	"github.com/Creative-genius001/go-logger"
+	"github.com/Creative-genius001/Stacklo/services/user/middlewares"
+	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
+	"go.uber.org/zap"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/tinrab/retry"
 )
 
 func main() {
-
-	//init config
 	config.Init()
+	c := config.Cfg
 
 	if err := godotenv.Load("../../.env"); err != nil {
-		logger.Fatal("No .env file found or failed to load")
+		logger.Logger.Fatal(".env file not found", zap.Error(err))
 	}
 
-	expectedHost := "localhost:" + config.Cfg.Port
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "" {
+		appEnv = "development"
+	}
 
-	router := gin.Default()
-	router.Use(gin.Recovery())
-	router.Use(func(c *gin.Context) {
+	logger.InitLogger(appEnv)
+	defer logger.Logger.Sync()
+
+	if appEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	PORT := c.Port
+
+	expectedHost := "localhost:" + c.Port
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middlewares.RequestLoggerMiddleware())
+	r.Use(middlewares.ErrorRecoveryMiddleware())
+	r.Use(func(c *gin.Context) {
 		if c.Request.Host != expectedHost {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid host header"})
 			return
@@ -41,34 +61,39 @@ func main() {
 		c.Header("Permissions-Policy", "geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()")
 		c.Next()
 	})
-	// router.Use(limit.MaxAllowed(200))
-
-	//connect to postgres DB
-	db.InitDB()
-
-	logger.Info("Connection to database url successful")
-
-	//init routes
-	routes.InitializeRoutes(router)
-
-	//Configure CORS
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AddAllowHeaders("Authorization")
 	corsConfig.AllowOrigins = []string{"*"}
-	router.Use(cors.New(corsConfig))
+	r.Use(cors.New(corsConfig))
+	// router.Use(limit.MaxAllowed(200))
 
-	//startup server
-	PORT := config.Cfg.Port
+	var re service.Repository
+	retry.ForeverSleep(2*time.Second, func(_ int) (err error) {
+		re, err = service.NewPostgresRepository(c.DBUrl)
+		if err != nil {
+			logger.Logger.Fatal("Failed to connect to database", zap.Error(err))
+		}
+		return
+	})
+	defer re.Close()
+	svc := service.NewService(re)
+	h := handler.NewHandler(svc)
+
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"error": "404 not found"})
+	})
+	routes.InitializeRoutes(r, h)
+
 	s := &http.Server{
 		Addr:           ":" + PORT,
-		Handler:        router,
+		Handler:        r,
 		ReadTimeout:    18000 * time.Second,
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	logger.Info("Server is starting and running on port: ", PORT)
+	logger.Logger.Info("Starting server", zap.String("port", PORT))
 	if err := s.ListenAndServe(); err != nil {
-		logger.Fatal("Failed to start server ", err)
+		logger.Logger.Fatal("Server failed to start", zap.Error(err))
 	}
 
 }

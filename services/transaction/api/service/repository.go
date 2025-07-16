@@ -190,6 +190,7 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 	query := `
 		SELECT 
 		t.*,
+		f.id,
 		f.reference_id, 
 		f.transaction_number, 
 		f.bank_name, 
@@ -197,6 +198,7 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 		f.account_number, 
 		f.fee, 
 		f.net_amount,
+		c.id,
 		c.exchange_order_id,
 		c.network,
 		c.network_fee,
@@ -231,6 +233,7 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 			&t.TransactionType,
 			&t.CreatedAt,
 			&t.UpdatedAt,
+			&f.ID,
 			&f.ReferenceID,
 			&f.TransactionNumber,
 			&f.BankName,
@@ -238,6 +241,7 @@ func (r *postgresRepository) GetSingleTransaction(ctx context.Context, transacti
 			&f.AccountNumber,
 			&f.Fee,
 			&f.NetAmount,
+			&c.ID,
 			&c.ExchangeOrderID,
 			&c.Network,
 			&c.NetworkFee,

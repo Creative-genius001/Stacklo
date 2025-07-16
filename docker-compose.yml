@@ -33,6 +33,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  user-db:
+    container_name: user_db
+    build:
+      context: ./services/user
+      dockerfile: db.Dockerfile
+    restart: on-failure
+    env_file:
+      - ./services/user/.env
+    environment:
+      POSTGRES_USER: ${USER_DB_USERNAME}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: ${USER_DB_NAME}
+    ports:
+      - "4205:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 networks:
   mynetwork:
     driver: bridge

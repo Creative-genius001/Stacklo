@@ -24,4 +24,3 @@ CREATE TABLE IF NOT EXISTS fiat_wallet_metadata (
     virtual_account_number VARCHAR(50),
     virtual_bank_name VARCHAR(255)
 );
-

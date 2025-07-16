@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS transactions  (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS fiat_transactions (
+CREATE TABLE IF NOT EXISTS fiat_transaction (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     reference_id VARCHAR(255) NOT NULL UNIQUE,
     transaction_number VARCHAR(255) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS fiat_transactions (
 );
 
 
-CREATE TABLE IF NOT EXISTS crypto_transactions (
+CREATE TABLE IF NOT EXISTS crypto_transaction (
     id UUID PRIMARY KEY REFERENCES transactions(id),
     exchange_order_id VARCHAR(255),
     network VARCHAR(50),       
