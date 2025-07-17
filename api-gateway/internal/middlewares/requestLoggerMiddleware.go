@@ -3,7 +3,7 @@ package middlewares
 import (
 	"time"
 
-	"github.com/Creative-genius001/Stacklo/services/transaction/utils/logger"
+	"github.com/Creative-genius001/Stacklo/api-gateway/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

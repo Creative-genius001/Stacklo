@@ -7,12 +7,12 @@ import (
 
 func InitializeRoutes(router *gin.Engine, h *handler.Handler) {
 
-	transactionR := router.Group("/api/transaction")
+	transaction := router.Group("/api/v1/transaction")
 	{
-		transactionR.POST("/create", h.CreateTransaction)
-		transactionR.GET("/", h.GetAllTransactions)
-		transactionR.GET("/:id", h.GetSingleTransaction)
-		transactionR.GET("/filter/:user_id", h.GetFilteredTransactions)
+		transaction.POST("/create", h.CreateTransaction)
+		transaction.GET("/", h.GetAllTransactions)
+		transaction.GET("/:id", h.GetSingleTransaction)
+		transaction.GET("/filter/:user_id", h.GetFilteredTransactions)
 
 	}
 

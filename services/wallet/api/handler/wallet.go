@@ -24,20 +24,20 @@ func NewHandler(s services.Service) *Handler {
 
 func (h *Handler) GetAllWallets(c *gin.Context) {
 
-	walletIDStr := strings.TrimSpace(c.Param("id"))
-	if walletIDStr == "" {
+	userIDStr := strings.TrimSpace(c.Param("id"))
+	if userIDStr == "" {
 		logger.Logger.Warn("Wallet ID is an empty string")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
-	isValid := utils.IsValidUUID(walletIDStr)
+	isValid := utils.IsValidUUID(userIDStr)
 	if isValid == false {
 		logger.Logger.Warn("Wallet ID is not a valid ID")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
-	wallet, err := h.service.GetAllWallets(c.Request.Context(), walletIDStr)
+	wallet, err := h.service.GetAllWallets(c.Request.Context(), userIDStr)
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {
@@ -61,20 +61,20 @@ func (h *Handler) GetAllWallets(c *gin.Context) {
 
 func (h *Handler) GetFiatWallet(c *gin.Context) {
 
-	walletIDStr := strings.TrimSpace(c.Param("id"))
-	if walletIDStr == "" {
+	userIDStr := strings.TrimSpace(c.Param("id"))
+	if userIDStr == "" {
 		logger.Logger.Warn("Wallet ID is an empty string")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
-	isValid := utils.IsValidUUID(walletIDStr)
+	isValid := utils.IsValidUUID(userIDStr)
 	if isValid == false {
 		logger.Logger.Warn("Wallet ID is not a valid ID")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
-	wallet, err := h.service.GetFiatWallet(c.Request.Context(), walletIDStr)
+	wallet, err := h.service.GetFiatWallet(c.Request.Context(), userIDStr)
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {

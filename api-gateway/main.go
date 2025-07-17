@@ -1,35 +1,37 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/api-gateway/internal/middlewares"
-	"github.com/Creative-genius001/Stacklo/api-gateway/internal/proxy"
+	r "github.com/Creative-genius001/Stacklo/api-gateway/internal/router"
 	"github.com/Creative-genius001/Stacklo/api-gateway/internal/utils/logger"
 	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
-	// "go.uber.org/zap"
+	"go.uber.org/zap"
 )
 
 func main() {
 
-	if err := godotenv.Load("../../.env"); err != nil {
-		// logger.Logger.Fatal(".env file not found", zap.Error(err))
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Fatal(".env file not found", zap.Error(err))
 	}
 
 	appEnv := os.Getenv("APP_ENV")
 	if appEnv == "" {
 		appEnv = "development"
 	}
-	// logger.InitLogger(appEnv)
-	defer logger.Logger.Sync()
 
 	if appEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	logger.InitLogger(appEnv)
+	defer logger.Logger.Sync()
 
 	// cfg := config.LoadConfig()
 	// if len(cfg.Microservices) == 0 {
@@ -39,7 +41,7 @@ func main() {
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis://localhost:6379/0"
-		// logger.Logger.Warn("REDIS_URL not set, using default for rate limiter", zap.String("default_url", redisURL))
+		logger.Logger.Warn("REDIS_URL not set, using default for rate limiter", zap.String("default_url", redisURL))
 	}
 
 	router := gin.New()
@@ -53,10 +55,7 @@ func main() {
 	router.Use(middlewares.ErrorRecoveryMiddleware())
 	// router.Use(middlewares.IPRateLimiter(redisURL))
 	router.Use(middlewares.SecurityHeadersMiddleware(os.Getenv("EXPECTED_HOST")))
-
-	protected := router.Group("/api/v1")
-	// protected.Use(middleware.Auth())
-	proxy.SetupRoutes(protected)
+	r.SetupRoutes(router)
 
 	s := &http.Server{
 		Addr:           ":" + os.Getenv("PORT"),
@@ -65,8 +64,8 @@ func main() {
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	// logger.Logger.Info("Starting server", zap.String("port", os.Getenv("PORT")))
+	logger.Logger.Info("Starting server", zap.String("port", os.Getenv("PORT")))
 	if err := s.ListenAndServe(); err != nil {
-		// logger.Logger.Fatal("Server failed to start", zap.Error(err))
+		logger.Logger.Fatal("Server failed to start", zap.Error(err))
 	}
 }

@@ -7,15 +7,15 @@ import (
 
 func InitializeRoutes(router *gin.Engine, h handlers.PaymentService) {
 
-	paymentRouter := router.Group("/api/payment")
+	payment := router.Group("/api/payment")
 	{
-		paymentRouter.GET("/bank-list", h.GetBankList)
-		paymentRouter.GET("/account-details", h.ResolveAccountNumber)
-		paymentRouter.POST("/transfer/otp", h.GetOTP)
-		// paymentRouter.POST("/otp/retry", handlers.RetryOtp)
-		paymentRouter.POST("/transfer", h.Transfer)
-		paymentRouter.GET("/ping", h.Ping)
-		paymentRouter.GET("/convert", h.Convert)
+		payment.GET("/bank-list", h.GetBankList)
+		payment.GET("/account-details", h.ResolveAccountNumber)
+		payment.POST("/transfer/otp", h.GetOTP)
+		// payment.POST("/otp/retry", handlers.RetryOtp)
+		payment.POST("/transfer", h.Transfer)
+		payment.GET("/ping", h.Ping)
+		payment.GET("/convert", h.Convert)
 	}
 
 }
