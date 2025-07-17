@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/model"
+	"github.com/Creative-genius001/Stacklo/services/wallet/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/google/uuid"

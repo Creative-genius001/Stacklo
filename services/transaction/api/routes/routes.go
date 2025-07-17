@@ -12,7 +12,7 @@ func InitializeRoutes(router *gin.Engine, h *handler.Handler) {
 		transactionR.POST("/create", h.CreateTransaction)
 		transactionR.GET("/", h.GetAllTransactions)
 		transactionR.GET("/:id", h.GetSingleTransaction)
-		transactionR.GET("/:user_id", h.GetFilteredTransactions)
+		transactionR.GET("/filter/:user_id", h.GetFilteredTransactions)
 
 	}
 

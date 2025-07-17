@@ -6,13 +6,13 @@ import (
 	"time"
 
 	//natsclient "github.com/Creative-genius001/Stacklo/pkg/natsClient"
-	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/handlers"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	"github.com/Creative-genius001/Stacklo/services/payment/middlewares"
 	bn "github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 
 	// "github.com/adshao/go-binance/v2"

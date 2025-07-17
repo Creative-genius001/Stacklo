@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	services "github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/model"
+	"github.com/Creative-genius001/Stacklo/services/wallet/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
