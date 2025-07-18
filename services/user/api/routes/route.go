@@ -7,14 +7,14 @@ import (
 
 func InitializeRoutes(router *gin.Engine, a *handler.AuthHandler, u *handler.UserHandler) {
 
-	userRouter := router.Group("/api/user")
+	user := router.Group("/api/user")
 	{
-		userRouter.GET("/:id", u.GetUser)
+		user.GET("/:id", u.GetUser)
 	}
 
-	authRouter := router.Group("/api/auth")
+	auth := router.Group("/api/auth")
 	{
-		authRouter.POST("/login", a.Login)
-		authRouter.POST("/register", a.Register)
+		auth.POST("/login", a.Login)
+		auth.POST("/register", a.Register)
 	}
 }

@@ -63,13 +63,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		FirstName:    form.FirstName,
 		LastName:     form.LastName,
 		PhoneNumber:  form.Phone,
+		KycStatus:    "not_started",
 	}
 
 	user, err := h.auth.CreateUser(c, payload)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
-			logger.Logger.Error("Unexpected error from PaystackAPIWrapper", zap.Error(err))
+			logger.Logger.Error("Unexpected error", zap.Error(err))
 			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
 		}

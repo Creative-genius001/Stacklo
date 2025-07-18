@@ -12,5 +12,5 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Country      string    `json:"country"`
-	KycStatus    string    `json:"kyc_status"`
+	KycStatus    string    `json:"kyc_status"` //'not_started', 'pending', 'approved', 'rejected', 'resubmit_required'
 }

@@ -18,7 +18,11 @@ type authService struct {
 
 // CreateUser implements Auth.
 func (a *authService) CreateUser(ctx context.Context, w model.User) (*model.User, error) {
-	panic("unimplemented")
+	res, err := a.repository.CreateUser(ctx, w)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // Login implements Auth.

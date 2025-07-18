@@ -15,25 +15,22 @@ type userService struct {
 	repository Repository
 }
 
-// Close implements Service.
-func (u *userService) Close() {
-	panic("unimplemented")
-}
-
-func (u *userService) CreateUser(ctx context.Context, w model.User) (*model.User, error) {
-	panic("unimplemented")
-}
-
-// GetUser implements Service.
-func (u *userService) GetUser(ctx context.Context, id string) (*model.User, error) {
-	panic("unimplemented")
-}
-
-// UpdateUser implements Service.
-func (u *userService) UpdateUser(ctx context.Context, w model.User) error {
-	panic("unimplemented")
-}
-
 func NewUserService(r Repository) Service {
 	return &userService{r}
+}
+
+func (u *userService) GetUser(ctx context.Context, id string) (*model.User, error) {
+	res, err := u.repository.GetUser(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (u *userService) UpdateUser(ctx context.Context, w model.User) error {
+	err := u.repository.UpdateUser(ctx, w)
+	if err != nil {
+		return err
+	}
+	return nil
 }
