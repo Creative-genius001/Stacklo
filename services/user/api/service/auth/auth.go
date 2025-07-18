@@ -45,16 +45,22 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	isValidPassword := utils.IsValidPassword(user.PasswordHash)
 	if !isValidPassword {
 		logger.Logger.Warn("invalid password")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "invalid password", er.New("invalid passwordd"))
+		return nil, errors.Wrap(errors.TypeInvalidInput, "invalid password", er.New("invalid password"))
 	}
 
-	res, err := a.repository.FindByEmail(ctx, user.Email)
+	res, err := a.repository.FindByPhoneOrEmail(ctx, user.Email, user.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
 	if res != nil {
-		logger.Logger.Warn("user with this email already exists")
-		return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("user with this email already exists"))
+		if res.Email == user.Email {
+			logger.Logger.Warn("user with this email already exists")
+			return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("user with this email already exists"))
+		}
+		if res.PhoneNumber == user.PhoneNumber {
+			logger.Logger.Warn("user with this phone number already exists")
+			return nil, errors.Wrap(errors.TypeConflict, "user with this phone number already exists", er.New("user with this phone number already exists"))
+		}
 	}
 
 	hashedPassword, _ := utils.HashPassword(user.PasswordHash)

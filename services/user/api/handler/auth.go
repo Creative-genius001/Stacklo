@@ -65,5 +65,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "user successfully registered", "data": user})
+	data := model.User{
+		ID:          user.ID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		PhoneNumber: user.PhoneNumber,
+		Country:     user.Country,
+		KycStatus:   user.KycStatus,
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "user successfully registered", "data": data})
 }

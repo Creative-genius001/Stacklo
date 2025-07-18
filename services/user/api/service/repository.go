@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	er "errors"
 	"fmt"
 	"os"
 
@@ -16,7 +17,7 @@ type Repository interface {
 	GetUser(ctx context.Context, id string) (*model.User, error)
 	CreateUser(ctx context.Context, user model.User) (*model.User, error)
 	UpdateUser(ctx context.Context, user model.User) error
-	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error)
 	Close()
 }
 
@@ -35,17 +36,28 @@ func NewPostgresRepository(url string) (Repository, error) {
 	return &postgresRepository{db}, nil
 }
 
-func (r *postgresRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error) {
 	query := `
 		SELECT 
 		u.*
 		FROM users u
-		WHERE u.email = $1
+		WHERE u.email = $1 OR u.phone_number = $2
 		LIMIT 1;
 	`
 	var user model.User
-	err := r.db.QueryRow(ctx, query, email).Scan(&email)
-	if err == pgx.ErrNoRows {
+	err := r.db.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.PhoneNumber,
+		&user.Country,
+		&user.KycStatus,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if er.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
