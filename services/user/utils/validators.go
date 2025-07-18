@@ -40,3 +40,19 @@ func IsValidPhoneNumber(numberToParse, countryCode string) (isValid bool, format
 
 	return isValid, formattedNum, nil
 }
+
+func IsValidPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	var (
+		upperCase = regexp.MustCompile(`[A-Z]`)
+		lowerCase = regexp.MustCompile(`[a-z]`)
+		symbol    = regexp.MustCompile(`[^a-zA-Z0-9]`)
+	)
+
+	return upperCase.MatchString(password) &&
+		lowerCase.MatchString(password) &&
+		symbol.MatchString(password)
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/user/api/service/auth"
 	"github.com/Creative-genius001/Stacklo/services/user/model"
 	"github.com/Creative-genius001/Stacklo/services/user/types"
-	"github.com/Creative-genius001/Stacklo/services/user/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/user/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -35,27 +34,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	//validate email
-	isValid := utils.IsValidEmail(form.Email)
-	if !isValid {
-		logger.Logger.Info("invalid email address")
-		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"error": errors.TypeInvalidInput})
-		return
-	}
-
-	//validate phoneNumber
-	isValid, formatPhone, err := utils.IsValidPhoneNumber(form.Phone, "NG")
-	if !isValid || err != nil {
-		logger.Logger.Info("invalid phone number")
-		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"error": errors.TypeInvalidInput})
-		return
-	}
-
-	form.Phone = formatPhone
-
-	var PasswordHash string
-	form.Password = PasswordHash
-
 	payload := model.User{
 		Email:        form.Email,
 		PasswordHash: form.Password,
@@ -66,7 +44,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		KycStatus:    "not_started",
 	}
 
-	user, err := h.auth.CreateUser(c, payload)
+	user, err := h.auth.Register(c, payload)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
