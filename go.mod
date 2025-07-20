@@ -24,6 +24,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/redis/go-redis/v9 v9.0.4 // indirect
+	github.com/resend/resend-go/v2 v2.21.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/ulule/limiter/v3 v3.11.2 // indirect
 	go.uber.org/multierr v1.10.0 // indirect

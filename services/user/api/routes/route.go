@@ -7,13 +7,13 @@ import (
 
 func InitializeRoutes(router *gin.Engine, a *handler.AuthHandler, u *handler.UserHandler) {
 
-	user := router.Group("/api/user")
+	user := router.Group("/api/v1/user")
 	{
 		user.GET("/:id", u.GetUser)
 		user.PUT("/:id", u.UpdateUser)
 	}
 
-	auth := router.Group("/api/auth")
+	auth := router.Group("/api/v1/auth")
 	{
 		auth.POST("/login", a.Login)
 		auth.POST("/register", a.Register)

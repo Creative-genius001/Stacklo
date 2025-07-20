@@ -13,7 +13,7 @@ import (
 
 type Auth interface {
 	Register(ctx context.Context, user model.User) (*model.User, error)
-	Login(ctx context.Context, w model.User) error
+	Login(ctx context.Context, email string, password string) (*model.User, error)
 }
 
 type authService struct {
@@ -55,11 +55,11 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	if res != nil {
 		if res.Email == user.Email {
 			logger.Logger.Warn("user with this email already exists")
-			return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("user with this email already exists"))
+			return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("email already exists"))
 		}
 		if res.PhoneNumber == user.PhoneNumber {
 			logger.Logger.Warn("user with this phone number already exists")
-			return nil, errors.Wrap(errors.TypeConflict, "user with this phone number already exists", er.New("user with this phone number already exists"))
+			return nil, errors.Wrap(errors.TypeConflict, "user with this phone number already exists", er.New("phone number already exists"))
 		}
 	}
 
@@ -73,6 +73,20 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	return res, nil
 }
 
-func (a *authService) Login(ctx context.Context, w model.User) error {
-	panic("unimplemented")
+func (a *authService) Login(ctx context.Context, email string, password string) (*model.User, error) {
+
+	user, err := a.repository.FindByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.Wrap(errors.TypeNotFound, "user not found", er.New("user not found"))
+	}
+
+	isValid := utils.CheckPasswordHash(password, user.PasswordHash)
+	if !isValid {
+		return nil, errors.Wrap(errors.TypeConflict, "password is incorrect", er.New("email or password is incorrect"))
+	}
+
+	return user, nil
 }

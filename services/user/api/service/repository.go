@@ -5,8 +5,10 @@ import (
 	er "errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Creative-genius001/Stacklo/services/user/model"
+	"github.com/Creative-genius001/Stacklo/services/user/types"
 	errors "github.com/Creative-genius001/Stacklo/services/user/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
 	"github.com/jackc/pgx/v5"
@@ -14,10 +16,17 @@ import (
 )
 
 type Repository interface {
-	GetUser(ctx context.Context, id string) (*model.User, error)
+	FindByID(ctx context.Context, id string) (*model.User, error)
 	CreateUser(ctx context.Context, user model.User) (*model.User, error)
-	UpdateUser(ctx context.Context, user model.User) error
+	UpdateUser(ctx context.Context, id string, data types.UpdateUser) error
+	UpdateEmail(ctx context.Context, id string, email string) error
+	UpdatePhone(ctx context.Context, id string, phone string) error
 	FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error)
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	StoreOTP(ctx context.Context, otp model.OTPJSON) error
+	UpdateOTPCountAttempt(ctx context.Context, attempt int) error
+	UpdateOTPVerificationStatus(ctx context.Context, token string, status bool) error
+	GetOTP(ctx context.Context, token string) (model.OTPJSON, error)
 	Close()
 }
 
@@ -45,7 +54,7 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 		LIMIT 1;
 	`
 	var user model.User
-	err := r.db.QueryRow(ctx, query, email).Scan(
+	err := r.db.QueryRow(ctx, query, email, phone).Scan(
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -58,6 +67,7 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 		&user.UpdatedAt,
 	)
 	if er.Is(err, pgx.ErrNoRows) {
+		logger.Logger.Warn("user not found")
 		return nil, nil
 	}
 	if err != nil {
@@ -105,13 +115,169 @@ func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*
 	return &newUser, nil
 }
 
-// GetUser implements Repository.
-func (r *postgresRepository) GetUser(ctx context.Context, id string) (*model.User, error) {
+func (r *postgresRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	query := `
+		SELECT
+		u.*
+		FROM users u
+		WHERE u.email = $1
+		LIMIT 1;
+	`
+	var user model.User
+	err := r.db.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.PhoneNumber,
+		&user.Country,
+		&user.KycStatus,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if er.Is(err, pgx.ErrNoRows) {
+		logger.Logger.Warn("user not found")
+		return nil, nil
+	}
+	if err != nil {
+		logger.Logger.Warn("Error getting user", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Error getting user", err)
+	}
+
+	return &user, nil
+}
+
+func (r *postgresRepository) FindByID(ctx context.Context, id string) (*model.User, error) {
+	query := `
+		SELECT
+		u.*
+		FROM users u
+		WHERE u.id = $1
+		LIMIT 1;
+	`
+	var user model.User
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.PhoneNumber,
+		&user.Country,
+		&user.KycStatus,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if er.Is(err, pgx.ErrNoRows) {
+		logger.Logger.Warn("user not found")
+		return nil, nil
+	}
+	if err != nil {
+		logger.Logger.Warn("Error getting user", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeInternal, "Error getting user", err)
+	}
+
+	return &user, nil
+}
+
+func (r *postgresRepository) UpdateUser(ctx context.Context, id string, data types.UpdateUser) error {
+	columns := []string{}
+	values := []interface{}{}
+	argPos := 1
+
+	if data.FirstName != nil {
+		columns = append(columns, fmt.Sprintf("first_name = $%d", argPos))
+		values = append(values, *data.FirstName)
+		argPos++
+	}
+
+	if data.LastName != nil {
+		columns = append(columns, fmt.Sprintf("last_name = $%d", argPos))
+		values = append(values, *data.LastName)
+		argPos++
+	}
+
+	if data.Country != nil {
+		columns = append(columns, fmt.Sprintf("country = $%d", argPos))
+		values = append(values, *data.Country)
+		argPos++
+	}
+	if data.KycStatus != nil {
+		columns = append(columns, fmt.Sprintf("kyc_status = $%d", argPos))
+		values = append(values, *data.KycStatus)
+		argPos++
+	}
+
+	if len(columns) == 0 {
+		return nil
+	}
+
+	query := fmt.Sprintf("UPDATE users SET %s, updated_at = NOW() WHERE id = $%d", strings.Join(columns, ", "), argPos)
+	values = append(values, id)
+
+	cmdTag, err := r.db.Exec(ctx, query, values...)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		logger.Logger.Error("No user found", zap.String("user-ID", id))
+		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
+	}
+	return nil
+}
+
+func (r *postgresRepository) UpdateEmail(ctx context.Context, id string, email string) error {
+	query := `
+		UPDATE users
+		SET email = $1, updated_at = NOW()
+		WHERE id = $2;	
+	`
+
+	cmdTag, err := r.db.Exec(ctx, query, email)
+	if err != nil {
+		logger.Logger.Error("failed to update user email", zap.String("user-ID", id), zap.Error(err))
+		return errors.Wrap(errors.TypeInternal, "failed to update user email ", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		logger.Logger.Error("No user found", zap.String("user-ID", id))
+		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
+	}
+	return nil
+}
+
+func (r *postgresRepository) UpdatePhone(ctx context.Context, id string, phone string) error {
+	query := `
+		UPDATE users
+		SET phone_number = $1, updated_at = NOW()
+		WHERE id = $2;	
+	`
+
+	cmdTag, err := r.db.Exec(ctx, query, phone)
+	if err != nil {
+		logger.Logger.Error("failed to update user phone number", zap.String("user-ID", id), zap.Error(err))
+		return errors.Wrap(errors.TypeInternal, "failed to update user phone number ", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		logger.Logger.Error("No user found", zap.String("user-ID", id))
+		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
+	}
+	return nil
+}
+
+func (r *postgresRepository) StoreOTP(ctx context.Context, otp model.OTPJSON) error {
 	panic("unimplemented")
 }
 
-// UpdateUser implements Repository.
-func (r *postgresRepository) UpdateUser(ctx context.Context, w model.User) error {
+func (r *postgresRepository) UpdateOTPCountAttempt(ctx context.Context, attempt int) error {
+	panic("unimplemented")
+}
+
+func (r *postgresRepository) UpdateOTPVerificationStatus(ctx context.Context, token string, status bool) error {
+	panic("unimplemented")
+}
+
+func (r *postgresRepository) GetOTP(ctx context.Context, token string) (model.OTPJSON, error) {
 	panic("unimplemented")
 }
 

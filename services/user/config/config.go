@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	Env   string `envconfig:"ENV" default:"development"`
-	Port  string `envconfig:"USER_SERVICE_PORT" default:"8080"`
-	DBUrl string `envconfig:"DB_URL" required:"true"`
+	Env       string `envconfig:"ENV" default:"development"`
+	Port      string `envconfig:"USER_SERVICE_PORT" default:"8080"`
+	DBUrl     string `envconfig:"DB_URL" required:"true"`
+	ResendAPI string `envconfig:"RESEND_API_KEY" required:"true"`
 }
 
 var (
