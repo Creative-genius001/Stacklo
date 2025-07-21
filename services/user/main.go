@@ -11,6 +11,7 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/user/api/service/auth"
 	"github.com/Creative-genius001/Stacklo/services/user/config"
 	"github.com/Creative-genius001/Stacklo/services/user/middlewares"
+	"github.com/Creative-genius001/Stacklo/services/user/redis"
 	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
 	"go.uber.org/zap"
 
@@ -52,6 +53,7 @@ func main() {
 	corsConfig.AllowOrigins = []string{"*"}
 	r.Use(cors.New(corsConfig))
 
+	//initialize database
 	var re service.Repository
 	retry.ForeverSleep(2*time.Second, func(_ int) (err error) {
 		re, err = service.NewPostgresRepository(c.DBUrl)
@@ -61,10 +63,17 @@ func main() {
 		return
 	})
 	defer re.Close()
+
+	//Initialize redis client
+	rdClient := redis.NewRedisClient(c.RedisDB)
+
+	otp := service.NewOTPService(re, rdClient)
 	svc := service.NewUserService(re)
-	auth := auth.NewAuthService(re)
-	authHandler := handler.NewAuthHandler(auth)
+	auth := auth.NewAuthService(re, otp)
+	authHandler := handler.NewAuthHandler(auth, otp)
 	userHandler := handler.NewUserHandler(svc)
+
+	redis.NewRedisClient(c.RedisDB)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "404 not found"})

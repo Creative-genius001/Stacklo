@@ -13,6 +13,7 @@ type Config struct {
 	Port      string `envconfig:"USER_SERVICE_PORT" default:"8080"`
 	DBUrl     string `envconfig:"DB_URL" required:"true"`
 	ResendAPI string `envconfig:"RESEND_API_KEY" required:"true"`
+	RedisDB   string `envconfig:"REDIS_DB_URL" required:"true"`
 }
 
 var (

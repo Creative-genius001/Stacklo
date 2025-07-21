@@ -40,6 +40,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		PhoneNumber: user.PhoneNumber,
+		IsVerified:  user.IsVerified,
 		Country:     user.Country,
 		KycStatus:   user.KycStatus,
 	}

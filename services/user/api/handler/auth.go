@@ -4,6 +4,7 @@ import (
 	er "errors"
 	"net/http"
 
+	"github.com/Creative-genius001/Stacklo/services/user/api/service"
 	"github.com/Creative-genius001/Stacklo/services/user/api/service/auth"
 	"github.com/Creative-genius001/Stacklo/services/user/model"
 	"github.com/Creative-genius001/Stacklo/services/user/types"
@@ -15,10 +16,11 @@ import (
 
 type AuthHandler struct {
 	auth auth.Auth
+	otp  service.OTPServ
 }
 
-func NewAuthHandler(a auth.Auth) *AuthHandler {
-	return &AuthHandler{a}
+func NewAuthHandler(a auth.Auth, o service.OTPServ) *AuthHandler {
+	return &AuthHandler{a, o}
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -40,9 +42,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			return
 		}
 		switch appErr.Type {
-		case errors.TypeInternal:
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
-			return
 		case errors.TypeConflict:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
 			return
@@ -81,6 +80,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		FirstName:    form.FirstName,
 		LastName:     form.LastName,
 		PhoneNumber:  form.Phone,
+		IsVerified:   false,
 		KycStatus:    "not_started",
 	}
 
@@ -93,9 +93,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			return
 		}
 		switch appErr.Type {
-		case errors.TypeInternal:
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
-			return
 		case errors.TypeConflict:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
 			return
@@ -112,6 +109,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		LastName:    user.LastName,
 		PhoneNumber: user.PhoneNumber,
 		Country:     user.Country,
+		IsVerified:  user.IsVerified,
 		KycStatus:   user.KycStatus,
 	}
 
@@ -119,5 +117,60 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) VerifyOTP(c *gin.Context) {
+	email := c.Query("email")
+	otp := c.Query("otp")
 
+	if otp == "" || email == "" {
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
+		return
+	}
+	userID, ok := c.Get("id")
+	if !ok {
+		c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+		return
+	}
+
+	err := h.otp.VerifyOTP(c.Request.Context(), userID.(string), email, otp)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			logger.Logger.Error("Unexpected error", zap.Error(err))
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+		if appErr.Type == errors.TypeInternal {
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		} else {
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			return
+		}
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "verification successful"})
+}
+
+func (h *AuthHandler) ResendOTP(c *gin.Context) {
+	email := c.Query("email")
+
+	err := h.otp.SendOTP(email)
+	if err != nil {
+		var appErr *errors.CustomError
+		if !er.As(err, &appErr) {
+			logger.Logger.Error("Unexpected error", zap.Error(err))
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		}
+		if appErr.Type == errors.TypeInternal {
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
+		} else {
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			return
+		}
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "verification code sent"})
 }

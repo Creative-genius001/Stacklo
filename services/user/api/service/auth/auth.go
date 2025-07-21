@@ -5,6 +5,8 @@ import (
 	er "errors"
 
 	"github.com/Creative-genius001/Stacklo/services/user/api/service"
+	"github.com/Creative-genius001/Stacklo/services/user/config"
+	"github.com/Creative-genius001/Stacklo/services/user/email"
 	"github.com/Creative-genius001/Stacklo/services/user/model"
 	"github.com/Creative-genius001/Stacklo/services/user/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/user/utils/error"
@@ -18,11 +20,14 @@ type Auth interface {
 
 type authService struct {
 	repository service.Repository
+	otp        service.OTPServ
 }
 
-func NewAuthService(r service.Repository) Auth {
-	return &authService{r}
+func NewAuthService(r service.Repository, o service.OTPServ) Auth {
+	return &authService{r, o}
 }
+
+var emailService = email.NewEmailClient(config.Cfg.ResendAPI)
 
 func (a *authService) Register(ctx context.Context, user model.User) (*model.User, error) {
 
@@ -48,16 +53,16 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 		return nil, errors.Wrap(errors.TypeInvalidInput, "invalid password", er.New("invalid password"))
 	}
 
-	res, err := a.repository.FindByPhoneOrEmail(ctx, user.Email, user.PhoneNumber)
+	resp, err := a.repository.FindByPhoneOrEmail(ctx, user.Email, user.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
-	if res != nil {
-		if res.Email == user.Email {
+	if resp != nil {
+		if resp.Email == user.Email {
 			logger.Logger.Warn("user with this email already exists")
 			return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("email already exists"))
 		}
-		if res.PhoneNumber == user.PhoneNumber {
+		if resp.PhoneNumber == user.PhoneNumber {
 			logger.Logger.Warn("user with this phone number already exists")
 			return nil, errors.Wrap(errors.TypeConflict, "user with this phone number already exists", er.New("phone number already exists"))
 		}
@@ -66,11 +71,12 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	hashedPassword, _ := utils.HashPassword(user.PasswordHash)
 	user.PasswordHash = hashedPassword
 
-	res, err = a.repository.CreateUser(ctx, user)
+	userResp, err := a.repository.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	a.otp.SendOTP(userResp.Email)
+	return userResp, nil
 }
 
 func (a *authService) Login(ctx context.Context, email string, password string) (*model.User, error) {

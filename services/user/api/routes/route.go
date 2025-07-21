@@ -17,5 +17,7 @@ func InitializeRoutes(router *gin.Engine, a *handler.AuthHandler, u *handler.Use
 	{
 		auth.POST("/login", a.Login)
 		auth.POST("/register", a.Register)
+		auth.POST("/verify-otp", a.VerifyOTP)
+		auth.POST("/resend-otp", a.ResendOTP)
 	}
 }

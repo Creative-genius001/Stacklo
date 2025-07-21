@@ -23,10 +23,7 @@ type Repository interface {
 	UpdatePhone(ctx context.Context, id string, phone string) error
 	FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
-	StoreOTP(ctx context.Context, otp model.OTPJSON) error
-	UpdateOTPCountAttempt(ctx context.Context, attempt int) error
-	UpdateOTPVerificationStatus(ctx context.Context, token string, status bool) error
-	GetOTP(ctx context.Context, token string) (model.OTPJSON, error)
+	UpdateVerificationStatus(ctx context.Context, userID string, status bool) error
 	Close()
 }
 
@@ -80,8 +77,8 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 
 func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
 	query := `
-		INSERT into users (email, password_hash, first_name, last_name, phone_number, country, kyc_status, created_at, update_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+		INSERT into users (email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, update_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
 	`
 	var newUser model.User
 	err := r.db.QueryRow(
@@ -93,6 +90,7 @@ func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*
 		user.LastName,
 		user.PhoneNumber,
 		user.Country,
+		user.IsVerified,
 		user.KycStatus,
 	).Scan(
 		&newUser.ID,
@@ -132,6 +130,7 @@ func (r *postgresRepository) FindByEmail(ctx context.Context, email string) (*mo
 		&user.LastName,
 		&user.PhoneNumber,
 		&user.Country,
+		&user.IsVerified,
 		&user.KycStatus,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -165,6 +164,7 @@ func (r *postgresRepository) FindByID(ctx context.Context, id string) (*model.Us
 		&user.LastName,
 		&user.PhoneNumber,
 		&user.Country,
+		&user.IsVerified,
 		&user.KycStatus,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -234,7 +234,7 @@ func (r *postgresRepository) UpdateEmail(ctx context.Context, id string, email s
 		WHERE id = $2;	
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, email)
+	cmdTag, err := r.db.Exec(ctx, query, email, id)
 	if err != nil {
 		logger.Logger.Error("failed to update user email", zap.String("user-ID", id), zap.Error(err))
 		return errors.Wrap(errors.TypeInternal, "failed to update user email ", err)
@@ -253,7 +253,7 @@ func (r *postgresRepository) UpdatePhone(ctx context.Context, id string, phone s
 		WHERE id = $2;	
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, phone)
+	cmdTag, err := r.db.Exec(ctx, query, phone, id)
 	if err != nil {
 		logger.Logger.Error("failed to update user phone number", zap.String("user-ID", id), zap.Error(err))
 		return errors.Wrap(errors.TypeInternal, "failed to update user phone number ", err)
@@ -265,20 +265,23 @@ func (r *postgresRepository) UpdatePhone(ctx context.Context, id string, phone s
 	return nil
 }
 
-func (r *postgresRepository) StoreOTP(ctx context.Context, otp model.OTPJSON) error {
-	panic("unimplemented")
-}
+func (r *postgresRepository) UpdateVerificationStatus(ctx context.Context, userID string, status bool) error {
+	query := `
+		UPDATE users
+		SET isVerified = $1, updated_at = NOW()
+		WHERE id = $2;	
+	`
 
-func (r *postgresRepository) UpdateOTPCountAttempt(ctx context.Context, attempt int) error {
-	panic("unimplemented")
-}
-
-func (r *postgresRepository) UpdateOTPVerificationStatus(ctx context.Context, token string, status bool) error {
-	panic("unimplemented")
-}
-
-func (r *postgresRepository) GetOTP(ctx context.Context, token string) (model.OTPJSON, error) {
-	panic("unimplemented")
+	cmdTag, err := r.db.Exec(ctx, query, status, userID)
+	if err != nil {
+		logger.Logger.Error("failed to update user verified status", zap.String("user-ID", userID), zap.Error(err))
+		return errors.Wrap(errors.TypeInternal, "failed to update user verified status ", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		logger.Logger.Error("No user found", zap.String("user-ID", userID))
+		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
+	}
+	return nil
 }
 
 func (r *postgresRepository) Close() {

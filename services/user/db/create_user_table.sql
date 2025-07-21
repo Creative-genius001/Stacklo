@@ -18,18 +18,6 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_kyc_status CHECK (kyc_status IN ('not_started', 'pending', 'approved', 'rejected', 'resubmit_required'))
 );
 
-CREATE TABLE IF NOT EXISTS otps (
-    id SERIAL PRIMARY KEY,
-    token VARCHAR(255) NULL,
-    otp VARCHAR(6) NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    verified BOOLEAN DEFAULT false,
-    attempts INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_otps_token ON otps (token)
-
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_isVerified ON users (isVerified);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_number ON users (phone_number);
