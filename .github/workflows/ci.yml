@@ -17,6 +17,8 @@ jobs:
       user_changed: ${{ steps.filter.outputs.user }}
       wallet_changed: ${{ steps.filter.outputs.wallet }}
       payment_changed: ${{ steps.filter.outputs.payment }}
+      transaction_changed: ${{ steps.filter.outputs.transaction }}
+      api_gateway_changed: ${{ steps.filter.outputs.api_gateway }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -34,6 +36,10 @@ jobs:
               - 'services/wallet/**'
             payment:
               - 'services/payment/**'
+            transaction:
+              - 'services/transaction/**'
+            api_gateway:
+              - 'services/api-gateway/**'
 
   user-service:
     needs: detect-changes
@@ -102,4 +108,50 @@ jobs:
 
       - name: Test
         working-directory: services/payment
+        run: go test -v ./...
+
+  transaction-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.transaction_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.2"
+
+      - name: Build
+        working-directory: services/transaction
+        run: go build -v ./...
+
+      - name: Test
+        working-directory: services/transaction
+        run: go test -v ./...
+
+  api-gateway-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api_gateway_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.2"
+
+      - name: Build
+        working-directory: services/api-gateway
+        run: go build -v ./...
+
+      - name: Test
+        working-directory: services/api-gateway
         run: go test -v ./...
