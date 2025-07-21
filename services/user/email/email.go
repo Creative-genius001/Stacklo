@@ -7,17 +7,21 @@ import (
 	"go.uber.org/zap"
 )
 
-type Resend struct {
+type Resend interface {
+	SendWelcomeEmail(toEmail string, name string) error
+	SendVerificationCode(toEmail string, code string) error
+}
+type resendClient struct {
 	client *resend.Client
 }
 
-func NewEmailClient(apiKey string) *Resend {
-	return &Resend{
+func NewEmailClient(apiKey string) Resend {
+	return &resendClient{
 		client: resend.NewClient(apiKey),
 	}
 }
 
-func (e *Resend) SendWelcomeEmail(toEmail string, name string) error {
+func (e *resendClient) SendWelcomeEmail(toEmail string, name string) error {
 	params := &resend.SendEmailRequest{
 		From:    "Stacklo <no-reply@stacklo.com>",
 		To:      []string{toEmail},
@@ -32,7 +36,7 @@ func (e *Resend) SendWelcomeEmail(toEmail string, name string) error {
 	return nil
 }
 
-func (e *Resend) SendVerificationCode(toEmail string, code string) error {
+func (e *resendClient) SendVerificationCode(toEmail string, code string) error {
 	params := &resend.SendEmailRequest{
 		From:    "Stacklo <no-reply@stacklo.com>",
 		To:      []string{toEmail},

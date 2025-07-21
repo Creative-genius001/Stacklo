@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE kyc_status_enum AS ENUM ('not_started', 'pending', 'approved', 'rejected', 'resubmit_required');
+CREATE TYPE kyc_status_enum AS ENUM ('not_started', 'pending', 'approved', 'rejected', 'resubmit_required');
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -22,4 +22,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_isVerified ON users (isVerified);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_number ON users (phone_number);
 CREATE INDEX IF NOT EXISTS idx_users_kyc_status ON users (kyc_status);
-CREATE INDEX IF NOT EXISTS idx_users_country ON users (country;
+CREATE INDEX IF NOT EXISTS idx_users_country ON users (country);

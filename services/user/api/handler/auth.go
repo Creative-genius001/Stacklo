@@ -45,6 +45,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		case errors.TypeConflict:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
 			return
+		case errors.TypeNotFound:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			return
 		default:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
@@ -69,7 +72,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	if err := c.ShouldBind(&form); err != nil {
 		logger.Logger.Info("invalid input data")
-		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "error": errors.TypeInvalidInput})
+		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
 
@@ -94,7 +97,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 		switch appErr.Type {
 		case errors.TypeConflict:
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
+			return
+		case errors.TypeInvalidInput:
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		default:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
@@ -102,18 +108,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 	}
 
-	data := model.User{
-		ID:          user.ID,
-		Email:       user.Email,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		PhoneNumber: user.PhoneNumber,
-		Country:     user.Country,
-		IsVerified:  user.IsVerified,
-		KycStatus:   user.KycStatus,
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "user successfully registered", "data": data})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "user successfully registered", "data": user})
 }
 
 func (h *AuthHandler) VerifyOTP(c *gin.Context) {
@@ -142,7 +137,7 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
 		} else {
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		}
 
@@ -166,7 +161,7 @@ func (h *AuthHandler) ResendOTP(c *gin.Context) {
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
 		} else {
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		}
 

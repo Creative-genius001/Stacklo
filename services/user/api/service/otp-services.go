@@ -5,26 +5,24 @@ import (
 	er "errors"
 	"time"
 
-	"github.com/Creative-genius001/Stacklo/services/user/config"
 	"github.com/Creative-genius001/Stacklo/services/user/email"
 	"github.com/Creative-genius001/Stacklo/services/user/redis"
 	"github.com/Creative-genius001/Stacklo/services/user/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/user/utils/error"
 )
 
-var emailService = email.NewEmailClient(config.Cfg.ResendAPI)
-
 type OTPServ interface {
 	VerifyOTP(ctx context.Context, userID string, email string, otpInput string) error
 	SendOTP(toEmail string) error
 }
 type otpService struct {
-	repository Repository
-	redis      redis.Redis
+	repository   Repository
+	redis        redis.Redis
+	emailService email.Resend
 }
 
-func NewOTPService(r Repository, rd redis.Redis) OTPServ {
-	return &otpService{r, rd}
+func NewOTPService(r Repository, rd redis.Redis, e email.Resend) OTPServ {
+	return &otpService{r, rd, e}
 }
 
 func (r *otpService) VerifyOTP(ctx context.Context, userID string, email string, otpInput string) error {
@@ -52,5 +50,5 @@ func (r *otpService) SendOTP(toEmail string) error {
 	if err != nil {
 		return errors.Wrap(errors.TypeInternal, "Unable to save OTP to Redis", err)
 	}
-	return emailService.SendVerificationCode(toEmail, verificationCode)
+	return r.emailService.SendVerificationCode(toEmail, verificationCode)
 }

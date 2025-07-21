@@ -64,7 +64,6 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 		&user.UpdatedAt,
 	)
 	if er.Is(err, pgx.ErrNoRows) {
-		logger.Logger.Warn("user not found")
 		return nil, nil
 	}
 	if err != nil {
@@ -77,8 +76,9 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 
 func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
 	query := `
-		INSERT into users (email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, update_at)
+		INSERT into users (email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+		RETURNING id, email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, updated_at;
 	`
 	var newUser model.User
 	err := r.db.QueryRow(
@@ -100,6 +100,7 @@ func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*
 		&newUser.LastName,
 		&newUser.PhoneNumber,
 		&newUser.Country,
+		&newUser.IsVerified,
 		&newUser.KycStatus,
 		&newUser.CreatedAt,
 		&newUser.UpdatedAt,

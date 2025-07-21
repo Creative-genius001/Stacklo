@@ -10,6 +10,7 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/user/api/service"
 	"github.com/Creative-genius001/Stacklo/services/user/api/service/auth"
 	"github.com/Creative-genius001/Stacklo/services/user/config"
+	"github.com/Creative-genius001/Stacklo/services/user/email"
 	"github.com/Creative-genius001/Stacklo/services/user/middlewares"
 	"github.com/Creative-genius001/Stacklo/services/user/redis"
 	"github.com/Creative-genius001/Stacklo/services/user/utils/logger"
@@ -67,9 +68,12 @@ func main() {
 	//Initialize redis client
 	rdClient := redis.NewRedisClient(c.RedisDB)
 
-	otp := service.NewOTPService(re, rdClient)
+	//initialize email client
+	emailClient := email.NewEmailClient(c.ResendAPI)
+
+	otp := service.NewOTPService(re, rdClient, emailClient)
 	svc := service.NewUserService(re)
-	auth := auth.NewAuthService(re, otp)
+	auth := auth.NewAuthService(re, otp, emailClient)
 	authHandler := handler.NewAuthHandler(auth, otp)
 	userHandler := handler.NewUserHandler(svc)
 

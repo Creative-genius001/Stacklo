@@ -3,9 +3,9 @@ package auth
 import (
 	"context"
 	er "errors"
+	"fmt"
 
 	"github.com/Creative-genius001/Stacklo/services/user/api/service"
-	"github.com/Creative-genius001/Stacklo/services/user/config"
 	"github.com/Creative-genius001/Stacklo/services/user/email"
 	"github.com/Creative-genius001/Stacklo/services/user/model"
 	"github.com/Creative-genius001/Stacklo/services/user/utils"
@@ -19,15 +19,14 @@ type Auth interface {
 }
 
 type authService struct {
-	repository service.Repository
-	otp        service.OTPServ
+	repository   service.Repository
+	otp          service.OTPServ
+	emailService email.Resend
 }
 
-func NewAuthService(r service.Repository, o service.OTPServ) Auth {
-	return &authService{r, o}
+func NewAuthService(r service.Repository, o service.OTPServ, e email.Resend) Auth {
+	return &authService{r, o, e}
 }
-
-var emailService = email.NewEmailClient(config.Cfg.ResendAPI)
 
 func (a *authService) Register(ctx context.Context, user model.User) (*model.User, error) {
 
@@ -50,7 +49,7 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	isValidPassword := utils.IsValidPassword(user.PasswordHash)
 	if !isValidPassword {
 		logger.Logger.Warn("invalid password")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "invalid password", er.New("invalid password"))
+		return nil, errors.Wrap(errors.TypeInvalidInput, "password must contain uppercase, lowercase and special symbols", er.New("invalid password"))
 	}
 
 	resp, err := a.repository.FindByPhoneOrEmail(ctx, user.Email, user.PhoneNumber)
@@ -75,8 +74,20 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	if err != nil {
 		return nil, err
 	}
+	a.emailService.SendWelcomeEmail(userResp.Email, fmt.Sprintf("%s %s", userResp.FirstName, userResp.LastName))
 	a.otp.SendOTP(userResp.Email)
-	return userResp, nil
+
+	userData := model.User{
+		ID:          userResp.ID,
+		Email:       userResp.Email,
+		FirstName:   userResp.FirstName,
+		LastName:    userResp.LastName,
+		Country:     userResp.Country,
+		IsVerified:  userResp.IsVerified,
+		KycStatus:   userResp.KycStatus,
+		PhoneNumber: userResp.PhoneNumber,
+	}
+	return &userData, nil
 }
 
 func (a *authService) Login(ctx context.Context, email string, password string) (*model.User, error) {
@@ -91,7 +102,7 @@ func (a *authService) Login(ctx context.Context, email string, password string) 
 
 	isValid := utils.CheckPasswordHash(password, user.PasswordHash)
 	if !isValid {
-		return nil, errors.Wrap(errors.TypeConflict, "password is incorrect", er.New("email or password is incorrect"))
+		return nil, errors.Wrap(errors.TypeConflict, "email or password is incorrect", er.New("email or password is incorrect"))
 	}
 
 	return user, nil

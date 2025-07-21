@@ -12,8 +12,8 @@ services:
       ]
     networks:
       - "mynetwork"
-  wallet-db:
-    container_name: wallet_db
+  wallet-service:
+    container_name: wallet_service
     build:
       context: ./services/wallet
       dockerfile: db.Dockerfile
@@ -31,8 +31,8 @@ services:
     volumes:
       - wallet_data:/var/lib/postgresql/data
 
-  transaction-db:
-    container_name: transaction_db
+  transaction-service:
+    container_name: transaction_service
     build:
       context: ./services/transaction
       dockerfile: db.Dockerfile
@@ -50,8 +50,8 @@ services:
     volumes:
       - transaction_data:/var/lib/postgresql/data
 
-  user-db:
-    container_name: user_db
+  user-service:
+    container_name: user_service
     build:
       context: ./services/user
       dockerfile: db.Dockerfile
