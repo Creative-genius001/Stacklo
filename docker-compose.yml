@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command:
+      [
+        "redis-server",
+        "/usr/local/etc/redis/redis.conf",
+      ]
+    networks:
+      - "mynetwork"
   wallet-db:
     container_name: wallet_db
     build:
@@ -13,8 +26,10 @@ services:
       POSTGRES_DB: ${WALLET_DB_NAME}
     ports:
       - "4200:5432"
+    networks:
+      - "mynetwork"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - wallet_data:/var/lib/postgresql/data
 
   transaction-db:
     container_name: transaction_db
@@ -30,8 +45,10 @@ services:
       POSTGRES_DB: ${TRANSACTION_DB_NAME}
     ports:
       - "4202:5432"
+    networks:
+      - "mynetwork"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - transaction_data:/var/lib/postgresql/data
 
   user-db:
     container_name: user_db
@@ -45,15 +62,20 @@ services:
       POSTGRES_USER: ${USER_DB_USERNAME}
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
       POSTGRES_DB: ${USER_DB_NAME}
+    depends_on:
+      - redis
     ports:
       - "4205:5432"
+    networks:
+      - "mynetwork"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - user_data:/var/lib/postgresql/data
 
 networks:
   mynetwork:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
+  wallet_data:
+  transaction_data:
+  user_data:
