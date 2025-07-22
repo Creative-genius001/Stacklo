@@ -23,7 +23,7 @@ type Repository interface {
 	UpdatePhone(ctx context.Context, id string, phone string) error
 	FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
-	UpdateVerificationStatus(ctx context.Context, userID string, status bool) error
+	UpdateVerificationStatus(ctx context.Context, email string, status bool) error
 	Close()
 }
 
@@ -59,6 +59,7 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 		&user.LastName,
 		&user.PhoneNumber,
 		&user.Country,
+		&user.IsVerified,
 		&user.KycStatus,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -68,7 +69,7 @@ func (r *postgresRepository) FindByPhoneOrEmail(ctx context.Context, email strin
 	}
 	if err != nil {
 		logger.Logger.Warn("Error getting user", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeInternal, "Error getting user", err)
+		return nil, errors.Wrap(errors.TypeInternal, "Scan error", err)
 	}
 
 	return &user, nil
@@ -78,7 +79,7 @@ func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*
 	query := `
 		INSERT into users (email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-		RETURNING id, email, password_hash, first_name, last_name, phone_number, country, isVerified, kyc_status, created_at, updated_at;
+		RETURNING id, email, first_name, last_name;
 	`
 	var newUser model.User
 	err := r.db.QueryRow(
@@ -95,20 +96,13 @@ func (r *postgresRepository) CreateUser(ctx context.Context, user model.User) (*
 	).Scan(
 		&newUser.ID,
 		&newUser.Email,
-		&newUser.PasswordHash,
 		&newUser.FirstName,
 		&newUser.LastName,
-		&newUser.PhoneNumber,
-		&newUser.Country,
-		&newUser.IsVerified,
-		&newUser.KycStatus,
-		&newUser.CreatedAt,
-		&newUser.UpdatedAt,
 	)
 
 	if err != nil {
 		logger.Logger.Error("Error creating user in databse", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeInternal, "Error creating user in databse", err)
+		return nil, errors.Wrap(errors.TypeInternal, "Scan error:", err)
 	}
 
 	return &newUser, nil
@@ -266,20 +260,20 @@ func (r *postgresRepository) UpdatePhone(ctx context.Context, id string, phone s
 	return nil
 }
 
-func (r *postgresRepository) UpdateVerificationStatus(ctx context.Context, userID string, status bool) error {
+func (r *postgresRepository) UpdateVerificationStatus(ctx context.Context, email string, status bool) error {
 	query := `
 		UPDATE users
 		SET isVerified = $1, updated_at = NOW()
-		WHERE id = $2;	
+		WHERE email = $2;	
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, status, userID)
+	cmdTag, err := r.db.Exec(ctx, query, status, email)
 	if err != nil {
-		logger.Logger.Error("failed to update user verified status", zap.String("user-ID", userID), zap.Error(err))
+		logger.Logger.Error("failed to update user verified status", zap.String("email", email), zap.Error(err))
 		return errors.Wrap(errors.TypeInternal, "failed to update user verified status ", err)
 	}
 	if cmdTag.RowsAffected() == 0 {
-		logger.Logger.Error("No user found", zap.String("user-ID", userID))
+		logger.Logger.Error("No user found", zap.String("user-ID", email))
 		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
 	}
 	return nil

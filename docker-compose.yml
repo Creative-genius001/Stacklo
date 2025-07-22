@@ -62,6 +62,7 @@ services:
       POSTGRES_USER: ${USER_DB_USERNAME}
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
       POSTGRES_DB: ${USER_DB_NAME}
+      REDIS_URL: redis://redis_db:6379
     depends_on:
       - redis
     ports:

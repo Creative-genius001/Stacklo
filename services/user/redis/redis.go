@@ -3,7 +3,10 @@ package redis
 import (
 	"context"
 	"encoding/json"
+
+	//er "errors"
 	"fmt"
+
 	"time"
 
 	"github.com/Creative-genius001/Stacklo/services/user/model"
@@ -26,7 +29,7 @@ type redisClient struct {
 func NewRedisClient(u string) Redis {
 	opt, err := redis.ParseURL(u)
 	if err != nil {
-		logger.Logger.Panic("Error connecting to Redis", zap.Error(err))
+		logger.Logger.Panic("Error parsing url", zap.Error(err))
 	}
 
 	return &redisClient{redis.NewClient(opt)}
@@ -57,14 +60,23 @@ func (r *redisClient) GetOTPFromRedis(email string) (*model.OTPJSON, error) {
 	key := fmt.Sprintf("otp:%s", email)
 	val, err := r.redis.Do(context.Background(),
 		"JSON.GET", key, "$",
-	).Text()
-	if err != nil {
+	).Result()
+
+	if err.Error() == "redis: nil" {
+		return nil, errors.Wrap(errors.TypeInvalidInput, "code is expired", err)
+	} else if err != nil {
 		logger.Logger.Error("Error getting OTP from Redis", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeInternal, "Unable to get OTP from redis", err)
+		return nil, errors.Wrap(errors.TypeInvalidInput, "verification failed", err)
 	}
 
+	jsonD, _ := json.Marshal(val)
+
 	var data []model.OTPJSON
-	json.Unmarshal([]byte(val), &data)
+	err = json.Unmarshal([]byte(jsonD), &data)
+	if err != nil {
+		logger.Logger.Error("invalid otp fomrat", zap.Error(err))
+		return nil, err
+	}
 
 	return &data[0], nil
 }

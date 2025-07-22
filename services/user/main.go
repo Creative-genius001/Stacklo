@@ -71,7 +71,7 @@ func main() {
 	//initialize email client
 	emailClient := email.NewEmailClient(c.ResendAPI)
 
-	otp := service.NewOTPService(re, rdClient, emailClient)
+	otp := service.NewOTPService(rdClient, emailClient)
 	svc := service.NewUserService(re)
 	auth := auth.NewAuthService(re, otp, emailClient)
 	authHandler := handler.NewAuthHandler(auth, otp)

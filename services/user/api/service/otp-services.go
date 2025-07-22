@@ -12,26 +12,25 @@ import (
 )
 
 type OTPServ interface {
-	VerifyOTP(ctx context.Context, userID string, email string, otpInput string) error
+	VerifyOTP(ctx context.Context, email string, otpInput string) error
 	SendOTP(toEmail string) error
 }
 type otpService struct {
-	repository   Repository
 	redis        redis.Redis
 	emailService email.Resend
 }
 
-func NewOTPService(r Repository, rd redis.Redis, e email.Resend) OTPServ {
-	return &otpService{r, rd, e}
+func NewOTPService(rd redis.Redis, e email.Resend) OTPServ {
+	return &otpService{rd, e}
 }
 
-func (r *otpService) VerifyOTP(ctx context.Context, userID string, email string, otpInput string) error {
+func (r *otpService) VerifyOTP(ctx context.Context, email string, otpInput string) error {
 	otpData, err := r.redis.GetOTPFromRedis(email)
 	if err != nil {
 		return err
 	}
-	if otpData == nil || otpData.ExpiresAt.Before(time.Now()) {
-		return errors.Wrap(errors.TypeForbidden, "OTP has Expired", er.New("OTP expired"))
+	if otpData.ExpiresAt.Before(time.Now()) {
+		return errors.Wrap(errors.TypeInvalidInput, "OTP has Expired", er.New("OTP expired"))
 	}
 	if otpData.Retry >= 3 {
 		return errors.Wrap(errors.TypeForbidden, "Max attempts reached", er.New("Max attempts reached"))
@@ -41,7 +40,7 @@ func (r *otpService) VerifyOTP(ctx context.Context, userID string, email string,
 		return errors.Wrap(errors.TypeUnauthorized, "Invalid OTP", er.New("Invalid OTP"))
 	}
 
-	return r.repository.UpdateVerificationStatus(ctx, userID, true)
+	return nil
 }
 
 func (r *otpService) SendOTP(toEmail string) error {

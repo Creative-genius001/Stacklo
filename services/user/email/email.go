@@ -45,8 +45,8 @@ func (e *resendClient) SendVerificationCode(toEmail string, code string) error {
 	}
 	_, err := e.client.Emails.Send(params)
 	if err != nil {
-		logger.Logger.Error("Failed to send welcome email", zap.Error(err))
-		return errors.Wrap(errors.TypeExternal, "Failed to send welcome email", err)
+		logger.Logger.Error("Failed to send otp verification code", zap.Error(err))
+		return errors.Wrap(errors.TypeExternal, "Failed to send verification code. Try again", err)
 	}
 	return nil
 }

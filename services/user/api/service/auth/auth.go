@@ -14,8 +14,10 @@ import (
 )
 
 type Auth interface {
-	Register(ctx context.Context, user model.User) (*model.User, error)
+	Register(ctx context.Context, user model.User) error
 	Login(ctx context.Context, email string, password string) (*model.User, error)
+	SignupOTPVerification(ctx context.Context, email string, otp string) error
+	AuthOTPVerification(ctx context.Context, email string, otp string) error
 }
 
 type authService struct {
@@ -28,20 +30,41 @@ func NewAuthService(r service.Repository, o service.OTPServ, e email.Resend) Aut
 	return &authService{r, o, e}
 }
 
-func (a *authService) Register(ctx context.Context, user model.User) (*model.User, error) {
+func (a *authService) SignupOTPVerification(ctx context.Context, email string, otp string) error {
+	err := a.otp.VerifyOTP(ctx, email, otp)
+	if err != nil {
+		return err
+	}
+
+	err = a.repository.UpdateVerificationStatus(ctx, email, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *authService) AuthOTPVerification(ctx context.Context, email string, otp string) error {
+	err := a.otp.VerifyOTP(ctx, email, otp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *authService) Register(ctx context.Context, user model.User) error {
 
 	//validate email
 	isValid := utils.IsValidEmail(user.Email)
 	if !isValid {
 		logger.Logger.Warn("invalid email address")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "Email address is invalid", er.New("Email address is invalid"))
+		return errors.Wrap(errors.TypeInvalidInput, "Email address is invalid", er.New("Email address is invalid"))
 	}
 
 	//validate phoneNumber
 	isValid, formatPhone, err := utils.IsValidPhoneNumber(user.PhoneNumber, "NG")
 	if !isValid || err != nil {
 		logger.Logger.Warn("invalid phone number")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "Phone number is invalid", er.New("Phone number is invalid"))
+		return errors.Wrap(errors.TypeInvalidInput, "Phone number is invalid", er.New("Phone number is invalid"))
 	}
 	user.PhoneNumber = formatPhone
 
@@ -49,21 +72,21 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 	isValidPassword := utils.IsValidPassword(user.PasswordHash)
 	if !isValidPassword {
 		logger.Logger.Warn("invalid password")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "password must contain uppercase, lowercase and special symbols", er.New("invalid password"))
+		return errors.Wrap(errors.TypeInvalidInput, "password must contain uppercase, lowercase and special symbols", er.New("invalid password"))
 	}
 
 	resp, err := a.repository.FindByPhoneOrEmail(ctx, user.Email, user.PhoneNumber)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if resp != nil {
 		if resp.Email == user.Email {
 			logger.Logger.Warn("user with this email already exists")
-			return nil, errors.Wrap(errors.TypeConflict, "user with this email already exists", er.New("email already exists"))
+			return errors.Wrap(errors.TypeConflict, "email already exists", er.New("email already exists"))
 		}
 		if resp.PhoneNumber == user.PhoneNumber {
 			logger.Logger.Warn("user with this phone number already exists")
-			return nil, errors.Wrap(errors.TypeConflict, "user with this phone number already exists", er.New("phone number already exists"))
+			return errors.Wrap(errors.TypeConflict, "phone number already exists", er.New("phone number already exists"))
 		}
 	}
 
@@ -72,22 +95,12 @@ func (a *authService) Register(ctx context.Context, user model.User) (*model.Use
 
 	userResp, err := a.repository.CreateUser(ctx, user)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	a.emailService.SendWelcomeEmail(userResp.Email, fmt.Sprintf("%s %s", userResp.FirstName, userResp.LastName))
 	a.otp.SendOTP(userResp.Email)
 
-	userData := model.User{
-		ID:          userResp.ID,
-		Email:       userResp.Email,
-		FirstName:   userResp.FirstName,
-		LastName:    userResp.LastName,
-		Country:     userResp.Country,
-		IsVerified:  userResp.IsVerified,
-		KycStatus:   userResp.KycStatus,
-		PhoneNumber: userResp.PhoneNumber,
-	}
-	return &userData, nil
+	return nil
 }
 
 func (a *authService) Login(ctx context.Context, email string, password string) (*model.User, error) {
@@ -105,5 +118,18 @@ func (a *authService) Login(ctx context.Context, email string, password string) 
 		return nil, errors.Wrap(errors.TypeConflict, "email or password is incorrect", er.New("email or password is incorrect"))
 	}
 
-	return user, nil
+	token, _ := utils.CreateToken(user.ID)
+
+	data := model.User{
+		ID:          user.ID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		PhoneNumber: user.PhoneNumber,
+		Country:     user.Country,
+		KycStatus:   user.KycStatus,
+		Token:       token,
+	}
+
+	return &data, nil
 }

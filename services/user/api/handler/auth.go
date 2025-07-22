@@ -43,10 +43,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 		switch appErr.Type {
 		case errors.TypeConflict:
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		case errors.TypeNotFound:
-			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Err})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		default:
 			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": errors.TypeInternal})
@@ -54,17 +54,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 	}
 
-	data := model.User{
-		ID:          user.ID,
-		Email:       user.Email,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		PhoneNumber: user.PhoneNumber,
-		Country:     user.Country,
-		KycStatus:   user.KycStatus,
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "login successful", "data": data})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "login successful", "data": user})
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -87,7 +77,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		KycStatus:    "not_started",
 	}
 
-	user, err := h.auth.Register(c, payload)
+	err := h.auth.Register(c, payload)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
@@ -108,7 +98,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "user successfully registered", "data": user})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "OTP verification code sent"})
 }
 
 func (h *AuthHandler) VerifyOTP(c *gin.Context) {
@@ -119,13 +109,8 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
-	userID, ok := c.Get("id")
-	if !ok {
-		c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
-		return
-	}
 
-	err := h.otp.VerifyOTP(c.Request.Context(), userID.(string), email, otp)
+	err := h.auth.SignupOTPVerification(c.Request.Context(), email, otp)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
