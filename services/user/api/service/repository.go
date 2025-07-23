@@ -23,7 +23,7 @@ type Repository interface {
 	UpdatePhone(ctx context.Context, id string, phone string) error
 	FindByPhoneOrEmail(ctx context.Context, email string, phone string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
-	UpdateVerificationStatus(ctx context.Context, email string, status bool) error
+	UpdateVerificationStatus(ctx context.Context, email string, status bool) (string, error)
 	Close()
 }
 
@@ -260,23 +260,22 @@ func (r *postgresRepository) UpdatePhone(ctx context.Context, id string, phone s
 	return nil
 }
 
-func (r *postgresRepository) UpdateVerificationStatus(ctx context.Context, email string, status bool) error {
+func (r *postgresRepository) UpdateVerificationStatus(ctx context.Context, email string, status bool) (string, error) {
 	query := `
 		UPDATE users
 		SET isVerified = $1, updated_at = NOW()
-		WHERE email = $2;	
+		WHERE email = $2
+		RETURNING id;	
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, status, email)
+	var userID string
+	err := r.db.QueryRow(ctx, query, status, email).Scan(&userID)
 	if err != nil {
 		logger.Logger.Error("failed to update user verified status", zap.String("email", email), zap.Error(err))
-		return errors.Wrap(errors.TypeInternal, "failed to update user verified status ", err)
+		return "", errors.Wrap(errors.TypeInternal, "failed to update user verified status ", err)
 	}
-	if cmdTag.RowsAffected() == 0 {
-		logger.Logger.Error("No user found", zap.String("user-ID", email))
-		return errors.Wrap(errors.TypeNotFound, "no user found ", er.New("user not found"))
-	}
-	return nil
+
+	return userID, nil
 }
 
 func (r *postgresRepository) Close() {

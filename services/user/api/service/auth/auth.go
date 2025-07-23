@@ -17,7 +17,7 @@ import (
 type Auth interface {
 	Register(ctx context.Context, user model.User) error
 	Login(ctx context.Context, email string, password string) (*model.User, error)
-	SignupOTPVerification(ctx context.Context, email string, otp string) error
+	SignupOTPVerification(ctx context.Context, email string, otp string) (string, error)
 	AuthOTPVerification(ctx context.Context, email string, otp string) error
 }
 
@@ -31,17 +31,19 @@ func NewAuthService(r service.Repository, o service.OTPServ, e email.Resend) Aut
 	return &authService{r, o, e}
 }
 
-func (a *authService) SignupOTPVerification(ctx context.Context, email string, otp string) error {
+func (a *authService) SignupOTPVerification(ctx context.Context, email string, otp string) (string, error) {
 	err := a.otp.VerifyOTP(ctx, email, otp)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	err = a.repository.UpdateVerificationStatus(ctx, email, true)
-	if err != nil {
-		return err
+	userID, err := a.repository.UpdateVerificationStatus(ctx, email, true)
+	if err != nil || userID == "" {
+		return "", err
 	}
-	return nil
+
+	token, _ := utils.CreateToken(userID, true)
+	return token, nil
 }
 
 func (a *authService) AuthOTPVerification(ctx context.Context, email string, otp string) error {
@@ -119,7 +121,7 @@ func (a *authService) Login(ctx context.Context, email string, password string) 
 		return nil, errors.Wrap(errors.TypeConflict, "email or password is incorrect", er.New("email or password is incorrect"))
 	}
 
-	token, _ := utils.CreateToken(user.ID)
+	token, _ := utils.CreateToken(user.ID, user.IsVerified)
 
 	data := model.User{
 		ID:          user.ID,

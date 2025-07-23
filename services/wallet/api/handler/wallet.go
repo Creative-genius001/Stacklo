@@ -67,9 +67,10 @@ func (h *Handler) GetFiatWallet(c *gin.Context) {
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
+
 	isValid := utils.IsValidUUID(userIDStr)
 	if isValid == false {
-		logger.Logger.Warn("Wallet ID is not a valid ID")
+		logger.Logger.Warn("user ID is not a valid ID")
 		c.JSON(errors.GetHTTPStatus(errors.TypeInvalidInput), gin.H{"status": "error", "message": errors.TypeInvalidInput})
 		return
 	}
@@ -99,6 +100,14 @@ func (h *Handler) GetFiatWallet(c *gin.Context) {
 func (h *Handler) CreateFiatWallet(c *gin.Context) {
 
 	var customerReq paystack.CreateCustomerRequest
+	isVerified := c.GetHeader("X-Is-Verified")
+	userID := c.GetHeader("X-User-ID")
+
+	if isVerified == "false" || isVerified == "" {
+		logger.Logger.Warn("user is unverified")
+		c.JSON(errors.GetHTTPStatus(errors.TypeUnauthorized), gin.H{"status": "error", "message": "only verified users can create wallet"})
+		return
+	}
 
 	if err := c.ShouldBindJSON(&customerReq); err != nil {
 		logger.Logger.Warn("Invalid input data")
@@ -106,37 +115,21 @@ func (h *Handler) CreateFiatWallet(c *gin.Context) {
 		return
 	}
 
-	wallet, err := h.service.CreateWalletPaystack(customerReq)
+	customerReq.ID = userID
+	w, err := h.service.CreateFiatWallet(c.Request.Context(), customerReq)
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)
 		if !ok {
 			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
 			return
 		}
-		if appErr.Type == errors.TypeInternal || appErr.Type == errors.TypeExternal {
-			logger.Logger.Error("Service error during wallet fetch", zap.Error(appErr))
+		if appErr.Type == errors.TypeInternal {
+			c.JSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
+			return
 		} else {
-			logger.Logger.Info("Client-facing error during wallet fetch", zap.Error(appErr))
-		}
-		c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
-		return
-	}
-
-	w, err := h.service.CreateFiatWallet(c.Request.Context(), *wallet)
-	if err != nil {
-		appErr, ok := err.(*errors.CustomError)
-		if !ok {
-			logger.Logger.Error("Fuck it didnt assert")
-			c.JSON(errors.GetHTTPStatus(errors.TypeForbidden), gin.H{"status": "error", "message": errors.TypeForbidden})
+			c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
 			return
 		}
-		if appErr.Type == errors.TypeInternal {
-			logger.Logger.Error("Service error: Could not create wallet", zap.Error(appErr))
-		} else {
-			logger.Logger.Info("Client-facing error during wallet fetch", zap.Error(appErr))
-		}
-		c.JSON(errors.GetHTTPStatus(appErr.Type), gin.H{"status": "error", "message": appErr.Message})
-		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -156,6 +149,14 @@ func (h *Handler) CreateFiatWallet(c *gin.Context) {
 
 func (h *Handler) CreateCryptoWallet(c *gin.Context) {
 	var wallet model.Wallet
+	isVerified := c.GetHeader("X-Is-Verified")
+	userID := c.GetHeader("X-User-ID")
+
+	if isVerified == "false" || isVerified == "" {
+		logger.Logger.Warn("user is unverified")
+		c.JSON(errors.GetHTTPStatus(errors.TypeUnauthorized), gin.H{"status": "error", "message": "only verified users can create wallet"})
+		return
+	}
 
 	if err := c.ShouldBindJSON(&wallet); err != nil {
 		logger.Logger.Warn("Invalid input data")
@@ -163,6 +164,7 @@ func (h *Handler) CreateCryptoWallet(c *gin.Context) {
 		return
 	}
 
+	wallet.UserId = userID
 	err := h.service.CreateCryptoWallet(c.Request.Context(), wallet)
 	if err != nil {
 		appErr, ok := err.(*errors.CustomError)

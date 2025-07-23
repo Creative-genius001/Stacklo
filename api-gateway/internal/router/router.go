@@ -35,4 +35,19 @@ func SetupRoutes(router *gin.Engine) {
 		payment.GET("/ping", handler.ProxyPing)
 		payment.GET("/convert", handler.ProxyConvert)
 	}
+
+	auth := router.Group("/api/v1/auth")
+	{
+		auth.POST("/login", handler.ProxyLogin)
+		auth.POST("/register", handler.ProxyRegister)
+		auth.POST("/verify-otp", handler.ProxyVerifyOTP)
+		auth.POST("/resend-otp", handler.ProxyResendOTP)
+	}
+
+	user := router.Group("/api/v1/user")
+	user.Use(middlewares.JWTAuth())
+	{
+		user.GET("/:id", handler.ProxyGetUser)
+		user.PUT("/:id", handler.ProxyUpdateUser)
+	}
 }

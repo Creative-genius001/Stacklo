@@ -7,7 +7,7 @@ import (
 
 func InitializeRoutes(router *gin.Engine, h handlers.PaymentService) {
 
-	payment := router.Group("/api/payment")
+	payment := router.Group("/api/v1/payment")
 	{
 		payment.GET("/bank-list", h.GetBankList)
 		payment.GET("/account-details", h.ResolveAccountNumber)

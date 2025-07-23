@@ -7,7 +7,7 @@ import (
 
 func InitializeRoutes(router *gin.Engine, h *handler.Handler) {
 
-	wallet := router.Group("/api/wallet")
+	wallet := router.Group("/api/v1/wallet")
 	{
 		wallet.GET("/:id", h.GetAllWallets)
 		wallet.GET("/fiat/:id", h.GetFiatWallet)

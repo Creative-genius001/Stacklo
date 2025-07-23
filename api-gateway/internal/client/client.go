@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/api-gateway/internal/utils/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type ServiceClient struct {
@@ -22,6 +24,8 @@ func NewServiceClient(baseURL string) *ServiceClient {
 
 func (s *ServiceClient) DoRequest(c *gin.Context, method string, path string, body io.Reader) {
 	url := s.BaseURL + path
+
+	logger.Logger.Debug("URL-PATH", zap.String("url", url))
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {

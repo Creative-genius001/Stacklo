@@ -28,7 +28,7 @@ func (u *userService) GetUser(ctx context.Context, id string) (*model.User, erro
 	isValid := utils.IsValidUUID(id)
 	if !isValid {
 		logger.Logger.Error("user id is invalid and could not be parsed")
-		return nil, errors.Wrap(errors.TypeInvalidInput, "user id could not be parsed", er.New("user id is not valid"))
+		return nil, errors.Wrap(errors.TypeInvalidInput, "user id is not valid", er.New("uuser id could not be parsed"))
 	}
 	res, err := u.repository.FindByID(ctx, id)
 	if err != nil {

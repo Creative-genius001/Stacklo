@@ -42,9 +42,9 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		role, exists := claims["role"].(string)
+		isVerified, exists := claims["isVerified"]
 		if !exists {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token, not verified"})
 			return
 		}
 
@@ -54,7 +54,7 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("role", role)
+		c.Set("isVerified", isVerified)
 		c.Set("id", id)
 
 		c.Next()

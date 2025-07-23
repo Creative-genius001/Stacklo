@@ -52,7 +52,7 @@ func (r *redisClient) SaveOTPToRedis(email string, otp string) error {
 	data := model.OTPJSON{
 		OTP:       otp,
 		Retry:     0,
-		ExpiresAt: time.Now().Add(3 * time.Minute),
+		ExpiresAt: time.Now().Add(1 * time.Minute),
 	}
 	jsonData, _ := json.Marshal(data)
 
@@ -64,7 +64,7 @@ func (r *redisClient) SaveOTPToRedis(email string, otp string) error {
 		return errors.Wrap(errors.TypeInternal, "Unable to save OTP to redis", cmd.Err())
 	}
 
-	r.redis.Expire(context.Background(), key, 5*time.Minute)
+	r.redis.Expire(context.Background(), key, 2*time.Minute)
 	return nil
 }
 

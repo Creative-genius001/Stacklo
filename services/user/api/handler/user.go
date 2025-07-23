@@ -45,7 +45,7 @@ func (u *UserHandler) GetUser(c *gin.Context) {
 		KycStatus:   user.KycStatus,
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "login successful", "data": data})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "login successful", "data": data})
 
 }
 

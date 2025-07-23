@@ -9,15 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func CreateToken(id string) (string, error) {
+func CreateToken(id string, isVerified bool) (string, error) {
 
 	JWT_KEY := os.Getenv("JWT_KEY")
 	var secretKey = []byte(JWT_KEY)
 
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  id,
-		"exp": time.Now().Add(72 * time.Hour).Unix(),
-		"iat": time.Now().Unix(),
+		"id":         id,
+		"isVerified": isVerified,
+		"exp":        time.Now().Add(72 * time.Hour).Unix(),
+		"iat":        time.Now().Unix(),
 	})
 
 	tokenString, err := claims.SignedString(secretKey)

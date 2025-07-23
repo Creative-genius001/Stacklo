@@ -110,7 +110,7 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	err := h.auth.SignupOTPVerification(c.Request.Context(), email, otp)
+	token, err := h.auth.SignupOTPVerification(c.Request.Context(), email, otp)
 	if err != nil {
 		var appErr *errors.CustomError
 		if !er.As(err, &appErr) {
@@ -128,7 +128,7 @@ func (h *AuthHandler) VerifyOTP(c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "verification successful"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "verification successful", "token": token})
 }
 
 func (h *AuthHandler) ResendOTP(c *gin.Context) {

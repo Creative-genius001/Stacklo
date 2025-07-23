@@ -7,13 +7,12 @@ import (
 	"github.com/Creative-genius001/Stacklo/services/wallet/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils"
 	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
 type Service interface {
 	GetFiatWallet(ctx context.Context, id string) (*model.Wallet, error)
-	CreateFiatWallet(ctx context.Context, wt model.Wallet) (*model.Wallet, error)
+	CreateFiatWallet(ctx context.Context, payload paystack.CreateCustomerRequest) (*model.Wallet, error)
 	CreateCryptoWallet(ctx context.Context, wt model.Wallet) error
 	GetAllWallets(ctx context.Context, id string) ([]*model.Wallet, error)
 	CreateWalletPaystack(c paystack.CreateCustomerRequest) (*model.Wallet, error)
@@ -53,6 +52,7 @@ func (s *walletService) CreateWalletPaystack(c paystack.CreateCustomerRequest) (
 	wPayStack := model.Wallet{
 		Currency:             "NGN",
 		Active:               true,
+		UserId:               c.ID,
 		VirtualAccountName:   utils.StringPtr(accountName),
 		VirtualAccountNumber: utils.StringPtr("0091728654"),
 		VirtualBankName:      utils.StringPtr("Providus Bank"),
@@ -96,9 +96,14 @@ func (w walletService) GetAllWallets(ctx context.Context, id string) ([]*model.W
 	return wallets, nil
 }
 
-func (w walletService) CreateFiatWallet(ctx context.Context, wt model.Wallet) (*model.Wallet, error) {
-	wt.UserId = uuid.NewString()
-	wallet, err := w.repository.CreateFiatWallet(ctx, wt)
+func (w walletService) CreateFiatWallet(ctx context.Context, payload paystack.CreateCustomerRequest) (*model.Wallet, error) {
+
+	cs, err := w.CreateWalletPaystack(payload)
+	if err != nil {
+		return nil, err
+	}
+	walletPayload := *cs
+	wallet, err := w.repository.CreateFiatWallet(ctx, walletPayload)
 	if err != nil {
 		return nil, err
 	}
