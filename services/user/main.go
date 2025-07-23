@@ -66,7 +66,12 @@ func main() {
 	defer re.Close()
 
 	//Initialize redis client
-	rdClient := redis.NewRedisClient(c.RedisDB)
+	rdClient, err := redis.NewRedisClient(c.RedisDB)
+	if err != nil {
+		logger.Logger.Fatal("Failed to initialize Redis client for User Service", zap.Error(err))
+	}
+	defer rdClient.Close()
+	logger.Logger.Info("Successfully initialized Redis client for User Service")
 
 	//initialize email client
 	emailClient := email.NewEmailClient(c.ResendAPI)

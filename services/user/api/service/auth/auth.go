@@ -3,7 +3,8 @@ package auth
 import (
 	"context"
 	er "errors"
-	"fmt"
+
+	//"fmt"
 
 	"github.com/Creative-genius001/Stacklo/services/user/api/service"
 	"github.com/Creative-genius001/Stacklo/services/user/email"
@@ -97,7 +98,7 @@ func (a *authService) Register(ctx context.Context, user model.User) error {
 	if err != nil {
 		return err
 	}
-	a.emailService.SendWelcomeEmail(userResp.Email, fmt.Sprintf("%s %s", userResp.FirstName, userResp.LastName))
+	//a.emailService.SendWelcomeEmail(userResp.Email, fmt.Sprintf("%s %s", userResp.FirstName, userResp.LastName))
 	a.otp.SendOTP(userResp.Email)
 
 	return nil
@@ -126,6 +127,7 @@ func (a *authService) Login(ctx context.Context, email string, password string) 
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		PhoneNumber: user.PhoneNumber,
+		IsVerified:  user.IsVerified,
 		Country:     user.Country,
 		KycStatus:   user.KycStatus,
 		Token:       token,
