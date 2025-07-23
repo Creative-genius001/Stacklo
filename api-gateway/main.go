@@ -10,6 +10,7 @@ import (
 	r "github.com/Creative-genius001/Stacklo/api-gateway/internal/router"
 	"github.com/Creative-genius001/Stacklo/api-gateway/internal/utils/logger"
 	"github.com/joho/godotenv"
+	"golang.org/x/time/rate"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -38,12 +39,6 @@ func main() {
 	// 	logger.Logger.Fatal("No microservices configured. Please set WALLET_SERVICE_URL, PAYMENT_SERVICE_URL, etc.")
 	// }
 
-	redisURL := os.Getenv("REDIS_URL")
-	if redisURL == "" {
-		redisURL = "redis://localhost:6379/0"
-		logger.Logger.Warn("REDIS_URL not set, using default for rate limiter", zap.String("default_url", redisURL))
-	}
-
 	router := gin.New()
 
 	//health check
@@ -51,9 +46,11 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	limiter := middlewares.NewClientLimiter(rate.Every(time.Minute/5), 10)
+	router.Use(limiter.Middleware())
+
 	router.Use(middlewares.RequestLoggerMiddleware())
 	router.Use(middlewares.ErrorRecoveryMiddleware())
-	// router.Use(middlewares.IPRateLimiter(redisURL))
 	router.Use(middlewares.SecurityHeadersMiddleware(os.Getenv("EXPECTED_HOST")))
 	r.SetupRoutes(router)
 

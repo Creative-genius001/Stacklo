@@ -1,71 +1,54 @@
 package middlewares
 
-// import (
-// 	"context"
-// 	"time"
+import (
+	"net/http"
+	"sync"
 
-// 	errors "github.com/Creative-genius001/Stacklo/services/api-gateway/internal/utils/error"
-// 	"github.com/Creative-genius001/Stacklo/services/api-gateway/internal/utils/logger"
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/go-redis/redis/v8"
-// 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 
-// 	limiter "github.com/ulule/limiter/v3"
-// 	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
-// 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
-// )
+	"github.com/gin-gonic/gin"
+)
 
-// func IPRateLimiter(redisURL string) gin.HandlerFunc {
+type ClientLimiter struct {
+	limiters map[string]*rate.Limiter
+	mu       sync.Mutex
+	r        rate.Limit
+	burst    int
+}
 
-// 	var c *gin.Context
-// 	//1000 requests per hour
-// 	rate, err := limiter.NewRateFromFormatted("1000-H")
-// 	if err != nil {
-// 		logger.Logger.Warn("Error parsing rate format", zap.Error(err))
-// 		c.AbortWithStatusJSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
-// 		return nil
-// 	}
+func NewClientLimiter(r rate.Limit, burst int) *ClientLimiter {
+	return &ClientLimiter{
+		limiters: make(map[string]*rate.Limiter),
+		r:        r,
+		burst:    burst,
+	}
+}
 
-// 	// Create a redis client.
-// 	option, err := redis.ParseURL(redisURL)
-// 	if err != nil {
-// 		logger.Logger.Warn("Error parsing Redis URL for rate limiter", zap.String("redis_url", redisURL), zap.Error(err))
-// 		c.AbortWithStatusJSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
-// 		return nil
-// 	}
-// 	client := redis.NewClient(option)
+func (cl *ClientLimiter) getLimiter(ip string) *rate.Limiter {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 
-// 	// Ping Redis to ensure connection is established
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
+	limiter, exists := cl.limiters[ip]
+	if !exists {
+		limiter = rate.NewLimiter(cl.r, cl.burst)
+		cl.limiters[ip] = limiter
+	}
 
-// 	_, err = client.Ping(ctx).Result()
-// 	if err != nil {
-// 		logger.Logger.Fatal("Error connecting to Redis for rate limiter", zap.String("redis_url", redisURL), zap.Error(err))
-// 	}
-// 	logger.Logger.Info("Successfully connected to Redis for rate limiting", zap.String("redis_url", redisURL))
+	return limiter
+}
 
-// 	// Create a store with the redis client.
-// 	store, err := sredis.NewStoreWithOptions(client, limiter.StoreOptions{
-// 		Prefix:   "rate_limiter",
-// 		MaxRetry: 3,
-// 	})
-// 	if err != nil {
-// 		logger.Logger.Warn("Error creating redis store for rate limiter", zap.Error(err))
-// 		c.AbortWithStatusJSON(errors.GetHTTPStatus(errors.TypeInternal), gin.H{"status": "error", "message": errors.TypeInternal})
-// 		return nil
-// 	}
+func (cl *ClientLimiter) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		limiter := cl.getLimiter(ip)
 
-// 	// Create a new middleware with the limiter instance.
-// 	rateLimiterMiddleware := mgin.NewMiddleware(limiter.New(store, rate),
-// 		mgin.WithKeyGetter(mgin.),
-// 		mgin.WithErrorHandler(func(c *gin.Context, err error) {
-// 			logger.Logger.Warn("Rate limit IP exceeded", zap.Error())
-// 			c.JSON(errors.GetHTTPStatus(errors.TypeTooManyRequests), gin.H{"status": "error", "message": errors.TypeTooManyRequests})
-// 			c.Abort()
-// 			logger.Logger.Warn("Rate limit exceeded for IP", zap.String("ip", c.ClientIP()), zap.Error(err))
-// 		}),
-// 	)
+		if !limiter.Allow() {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "Rate limit exceeded. Please try again later.",
+			})
+			return
+		}
 
-// 	return rateLimiterMiddleware
-// }
+		c.Next()
+	}
+}
