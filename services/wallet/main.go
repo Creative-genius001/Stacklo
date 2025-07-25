@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/handler"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/routes"
 	"github.com/Creative-genius001/Stacklo/services/wallet/api/service"
 	"github.com/Creative-genius001/Stacklo/services/wallet/config"
 	"github.com/Creative-genius001/Stacklo/services/wallet/middlewares"
-	"github.com/Creative-genius001/Stacklo/services/wallet/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"go.uber.org/zap"
 
