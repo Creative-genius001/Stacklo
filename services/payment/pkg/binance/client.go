@@ -12,8 +12,7 @@ import (
 
 	"github.com/Creative-genius001/Stacklo/services/payment/config"
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
-	// "github.com/Creative-genius001/Stacklo/services/payment/utils/logger"
-	// "go.uber.org/zap"
+	"go.uber.org/zap"
 )
 
 type Binance interface {
@@ -24,16 +23,18 @@ type Binance interface {
 
 type binanceClient struct {
 	client  *http.Client
+	logger  *zap.Logger
 	baseURL string
 	apiKey  string
 	secret  string
 }
 
-func NewBinanceClient(cfg *config.Config) Binance {
+func NewBinanceClient(cfg *config.Config, logger *zap.Logger) Binance {
 	return &binanceClient{
 		client: &http.Client{
 			Timeout: 20 * time.Second,
 		},
+		logger:  logger,
 		baseURL: cfg.BinanceBaseUrl,
 		apiKey:  cfg.BinanceAPIKey,
 		secret:  cfg.BinanceSecretKey,
@@ -67,8 +68,8 @@ func (b *binanceClient) BinanceAPIClient(method, url string, body any, signed bo
 	}
 	req, err := http.NewRequest(method, urlPath, bodyReader)
 	if err != nil {
-		// logger.Logger.Error("Failed to connect to BINANCE API", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to BINANCE API", err)
+		b.logger.Error("Failed to connect to BINANCE API", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to create a new binance request", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -76,16 +77,16 @@ func (b *binanceClient) BinanceAPIClient(method, url string, body any, signed bo
 		req.Header.Set("X-MBX-APIKEY", b.apiKey)
 	}
 
-	// logger.Logger.Debug("API CALL DEBUG", zap.String("path", req.URL.Path), zap.String("method", req.Method))
+	b.logger.Debug("BINANCE API CALL", zap.String("path", url), zap.String("method", method))
 
 	resp, err := b.client.Do(req)
 	if err != nil {
-		// logger.Logger.Error("Failed to get data", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to get BINANCE API data", err)
+		b.logger.Error("Failed to get data", zap.Error(err))
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to get BINANCE data", err)
 	}
 	defer resp.Body.Close()
 
-	// logger.Logger.Info("Binance response body", zap.ByteString("body", respBody))
+	b.logger.Info("Binance response body", zap.Any("body", resp.Body))
 
 	return io.ReadAll(resp.Body)
 }

@@ -9,20 +9,21 @@ import (
 	"time"
 
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
-	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"go.uber.org/zap"
 )
 
 type paystackClient struct {
 	apiKey     string
 	baseURL    string
+	logger     *zap.Logger
 	httpClient *http.Client
 }
 
-func NewPaystackClient(apiKey, baseURL string) Paystack {
+func NewPaystackClient(apiKey, baseURL string, logger *zap.Logger) Paystack {
 	return &paystackClient{
 		apiKey:     apiKey,
 		baseURL:    baseURL,
+		logger:     logger,
 		httpClient: &http.Client{Timeout: 60 * time.Second},
 	}
 }
@@ -41,7 +42,7 @@ func (p *paystackClient) PaystackAPIWrapper(method string, url string, addHeader
 
 	req, err := http.NewRequest(method, urlPath, reqBody)
 	if err != nil {
-		logger.Logger.Error("Failed to connect to PAYSTACK API", zap.Error(err))
+		p.logger.Error("Failed to connect to PAYSTACK API", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to PAYSTACK API", err)
 	}
 
@@ -58,11 +59,11 @@ func (p *paystackClient) PaystackAPIWrapper(method string, url string, addHeader
 		req.Header.Set(k, v)
 	}
 
-	logger.Logger.Debug("API CALL DEBUG", zap.String("path", req.URL.Path), zap.String("method", req.Method))
+	p.logger.Debug("API CALL DEBUG", zap.String("path", url), zap.String("method", method))
 	var resp *http.Response
 	resp, err = p.httpClient.Do(req)
 	if err != nil {
-		logger.Logger.Error("Failed to return PAYSTACK API call response", zap.Any("method", method), zap.Any("url", url), zap.Error(err))
+		p.logger.Error("Failed to return PAYSTACK API call response", zap.Any("method", method), zap.Any("url", url), zap.Error(err))
 		return nil, errors.Wrap(errors.TypeExternal, "Failed to return PAYSTACK API call response", err)
 	}
 	defer resp.Body.Close()
@@ -71,10 +72,10 @@ func (p *paystackClient) PaystackAPIWrapper(method string, url string, addHeader
 	if resp.StatusCode >= 400 {
 		errorBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			logger.Logger.Warn("Failed to read response body", zap.Error(err))
+			p.logger.Warn("Failed to read response body", zap.Error(err))
 			return nil, errors.Wrap(errors.TypeExternal, "Failed to read response body", er.New("Failed to read response body"))
 		}
-		logger.Logger.Error("PAYSTACK API Error Response", zap.Any("method", method), zap.Any("url", url), zap.Int("code", resp.StatusCode), zap.String("error", string(errorBody)))
+		p.logger.Error("PAYSTACK API Error Response", zap.Any("method", method), zap.Any("url", url), zap.Int("code", resp.StatusCode), zap.String("error", string(errorBody)))
 		return nil, errors.Wrap(errors.TypeExternal, "PAYSTACK API Error", er.New(string(errorBody)))
 	}
 

@@ -64,7 +64,7 @@ func main() {
 		return
 	})
 	defer re.Close()
-	ps := paystack.NewPaystackClient(payApi, payUrl)
+	ps := paystack.NewPaystackClient(payApi, payUrl, logger.Logger)
 	svc := service.NewService(re, ps)
 	h := handler.NewHandler(svc)
 

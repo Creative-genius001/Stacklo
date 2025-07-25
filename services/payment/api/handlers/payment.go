@@ -4,9 +4,9 @@ import (
 	er "errors"
 	"net/http"
 
-	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/payment/api/services"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
 	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
 	"github.com/gin-gonic/gin"

@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	errors "github.com/Creative-genius001/Stacklo/services/wallet/utils/error"
-	"github.com/Creative-genius001/Stacklo/services/wallet/utils/logger"
+	errors "github.com/Creative-genius001/Stacklo/services/payment/utils/error"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +18,7 @@ func (p *paystackClient) GetBankList() (*Banks, error) {
 	var result Banks
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -37,7 +36,7 @@ func (p *paystackClient) ResolveAccountNumber(accountNumber string, bankCode str
 	var result AccountResolutionResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -59,7 +58,7 @@ func (p *paystackClient) CreateTransferRecipient(payload *CreateTransferRecipien
 	var result CreateTransferRecipientResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -81,7 +80,7 @@ func (p *paystackClient) GetOTP(payload *TransferOtpRequest) (*TransferOtpRespon
 	var result TransferOtpResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -103,7 +102,7 @@ func (p *paystackClient) Transfer(payload FianlTransferRequest) (*FinalTransferR
 	var result FinalTransferResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -124,7 +123,7 @@ func (p *paystackClient) CreateCustomer(payload CreateCustomerRequest) (*CreateC
 	var result CreateCustomerResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 
@@ -145,7 +144,7 @@ func (p *paystackClient) CreateDVAWallet(payload *CreateDVAWalletRequest) (*Crea
 	var result CreateDVAWalletResponse
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		logger.Logger.Warn("Failed to unmarshal request body", zap.Error(err))
+		p.logger.Warn("Failed to unmarshal request body", zap.Error(err))
 		return nil, errors.Wrap(errors.TypeInternal, "Failed to unmarshal request body", err)
 	}
 

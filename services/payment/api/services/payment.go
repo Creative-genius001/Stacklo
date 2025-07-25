@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/Creative-genius001/Stacklo/pkg/paystack"
 	"github.com/Creative-genius001/Stacklo/services/payment/pkg/binance"
+	"github.com/Creative-genius001/Stacklo/services/payment/pkg/paystack"
 )
 
 type PaymentService interface {
