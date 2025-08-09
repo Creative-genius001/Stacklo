@@ -15,7 +15,8 @@ func InitializeRoutes(router *gin.Engine, h handlers.PaymentService) {
 		// payment.POST("/otp/retry", handlers.RetryOtp)
 		payment.POST("/transfer", h.Transfer)
 		payment.GET("/ping", h.Ping)
-		payment.GET("/convert", h.Convert)
+		payment.GET("/ticker", h.TickerPrice)
+		payment.POST("/order", h.Order)
 	}
 
 }

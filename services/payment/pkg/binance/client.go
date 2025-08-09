@@ -16,9 +16,9 @@ import (
 )
 
 type Binance interface {
-	PlaceBuyOrder(ctx context.Context, req BinanceOrderRequest) (*BinanceOrderResponse, error)
+	Order(ctx context.Context, req BinanceOrderRequest) (*BinanceOrderResponse, error)
 	Ping() error
-	Convert(creq ConvertAssetRequest) ([]*ConvertAssetResponse, error)
+	TickerPrice(creq TickerPriceRequest) (*TickerPriceResponse, error)
 }
 
 type binanceClient struct {
@@ -77,16 +77,17 @@ func (b *binanceClient) BinanceAPIClient(method, url string, body any, signed bo
 		req.Header.Set("X-MBX-APIKEY", b.apiKey)
 	}
 
-	b.logger.Debug("BINANCE API CALL", zap.String("path", url), zap.String("method", method))
+	b.logger.Debug("BINANCE API CALL", zap.String("path", urlPath), zap.String("method", method))
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		b.logger.Error("Failed to get data", zap.Error(err))
-		return nil, errors.Wrap(errors.TypeExternal, "Failed to get BINANCE data", err)
+		return nil, errors.Wrap(errors.TypeExternal, "Failed to connect to Binance", err)
 	}
 	defer resp.Body.Close()
 
-	b.logger.Info("Binance response body", zap.Any("body", resp.Body))
+	convData, _ := io.ReadAll(resp.Body)
+	b.logger.Info("API RESPONSE =>", zap.Any("resp", resp.Body), zap.Any("data", body))
 
-	return io.ReadAll(resp.Body)
+	return convData, nil
 }

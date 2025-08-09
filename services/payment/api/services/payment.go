@@ -14,8 +14,8 @@ type PaymentService interface {
 	CreateTransferRecipient(payload *paystack.CreateTransferRecipientRequest) (*paystack.CreateTransferRecipientResponse, error)
 	Transfer(payload paystack.FianlTransferRequest) (*paystack.FinalTransferResponse, error)
 	Ping() error
-	PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error)
-	Convert(creq binance.ConvertAssetRequest) ([]*binance.ConvertAssetResponse, error)
+	Order(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error)
+	TickerPrice(creq binance.TickerPriceRequest) (*binance.TickerPriceResponse, error)
 }
 
 type paymentServiceImpl struct {
@@ -76,12 +76,16 @@ func (p *paymentServiceImpl) Ping() error {
 	return nil
 }
 
-func (p *paymentServiceImpl) PlaceBuyOrder(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error) {
-	panic("unimplemented")
+func (p *paymentServiceImpl) Order(ctx context.Context, req binance.BinanceOrderRequest) (*binance.BinanceOrderResponse, error) {
+	res, err := p.binanceClient.Order(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
-func (p *paymentServiceImpl) Convert(creq binance.ConvertAssetRequest) ([]*binance.ConvertAssetResponse, error) {
-	res, err := p.binanceClient.Convert(creq)
+func (p *paymentServiceImpl) TickerPrice(creq binance.TickerPriceRequest) (*binance.TickerPriceResponse, error) {
+	res, err := p.binanceClient.TickerPrice(creq)
 	if err != nil {
 		return nil, err
 	}

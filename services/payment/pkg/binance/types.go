@@ -8,12 +8,9 @@ const (
 )
 
 type BinanceOrderRequest struct {
-	Symbol        string    // e.g., "BTCUSDT", "ETHNGN"
-	Side          string    // "BUY" or "SELL"
-	Type          OrderType // "MARKET" or "LIMIT"
-	Quantity      float64   // Amount of crypto to buy/sell
-	Price         float64   // Optional, for limit orders
-	QuoteOrderQty float64   // Optional, for market buys in quote currency (e.g., NGN amount)
+	Symbol   string `json:"symbol"`   // e.g., "BTCUSDT", "ETHNGN"
+	Side     string `json:"side"`     // "BUY" or "SELL"
+	Quantity string `json:"quantity"` // Amount of crypto to buy/sell
 }
 
 type BinanceOrderResponse struct {
@@ -25,16 +22,12 @@ type BinanceOrderResponse struct {
 	ClientOrderID       string  `json:"clientOrderId"`
 }
 
-type ConvertAssetRequest struct {
+type TickerPriceRequest struct {
 	FromAsset string `json:"fromAsset"`
 	ToAsset   string `json:"toAsset"`
 }
 
-type ConvertAssetResponse struct {
-	FromAsset          string `json:"fromAsset"`
-	ToAsset            string `json:"toAsset"`
-	FromAssetMinAmount string `json:"fromAssetMinAmount"`
-	FromAssetMaxAmount string `json:"fromAssetMaxAmount"`
-	ToAssetMinAmount   string `json:"toAssetMinAmount"`
-	ToAssetMaxAmount   string `json:"toAssetMaxAmount"`
+type TickerPriceResponse struct {
+	Symbol string `json:"symbol"`
+	Price  string `json:"price"`
 }
